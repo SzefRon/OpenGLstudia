@@ -72,3 +72,15 @@ const unsigned int &Shader::getProgramID()
 {
     return programID;
 }
+
+void Shader::setUniformMat4(const char *name, glm::mat4 &val)
+{
+    unsigned location = glGetUniformLocation(programID, name);
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(val));
+}
+
+void Shader::setUniform4fv(const char * name, glm::vec4 &val)
+{
+    unsigned location = glGetUniformLocation(programID, name);
+    glUniform4fv(location, 1, glm::value_ptr(val));
+}

@@ -3,12 +3,19 @@
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
 #include "Shader.h"
+#include "Cube.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "imgui.h"
 #include "imgui_impl/imgui_impl_glfw.h"
 #include "imgui_impl/imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <iostream>
+#include <deque>
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
@@ -31,6 +38,29 @@
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+}
+
+std::deque<Cube *> cubes;
+float prevDestroyed = 0.0f;
+float destroyed = 0.0f;
+
+void generateMenger(unsigned int recursion, float size, float x, float y, float z)
+{
+    if (recursion == 1) {
+        cubes.push_back(new Cube(x, y, z, destroyed * size * (0.5f * sinf(3.14159265358979323f * x) + 0.5f) + (1.0f - destroyed) * size));
+    }
+    else {
+        float thirdSize = 0.33333333f * size;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                for (int k = -1; k <= 1; k++) {
+                    if (i * j != 0 || j * k != 0 || k * i != 0) {
+                        generateMenger(recursion - 1, thirdSize, i * thirdSize + x, j * thirdSize + y, k * thirdSize + z);
+                    }
+                }
+            }
+        }
+    }
 }
 
 int main(int, char**)
@@ -110,40 +140,29 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     int recursions = 1;
+    int prevRecursions = 2;
+    float rotateX = 0.0f, rotateY = 0.0f, zoom = 1.0f;
 
-    float vertices[] = {
-        -1.0f, -0.75f, 0.0f,
-        -0.75f, 0.25f, 0.0f,
-        -0.5f, -0.75f, 0.0f,
-        0.5f, -0.75f, 0.0f,
-        0.75f, 0.25f, 0.0f,
-        1.0f, -0.75f, 0.0f
-    };
-    unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 2,  // first Triangle
-        3, 4, 5   // second Triangle
-    };
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("..\\res\\textures\\stone.jpg", &width, &height, &nrChannels, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    glBindVertexArray(0); 
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -162,11 +181,16 @@ int main(int, char**)
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
+            ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
             ImGui::Begin("Hello, motherfuckers!");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::SliderInt("Number of recursions", &recursions, 1, 7);
+            ImGui::SliderFloat("Zoom", &zoom, -3.0f, 0.0f);
+            ImGui::SliderAngle("Rotate X", &rotateX);
+            ImGui::SliderAngle("Rotate Y", &rotateY);
+            ImGui::SliderInt("Number of recursions", &recursions, 1, 5);
+            ImGui::SliderFloat("Destroyed", &destroyed, 0.0f, 1.0f);
 
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+            ImGui::ColorEdit4("clear color", (float*)&color); // Edit 3 floats representing a color
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
@@ -179,12 +203,40 @@ int main(int, char**)
         glfwMakeContextCurrent(window);
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        if (prevRecursions != recursions || prevDestroyed != destroyed) {
+            for (auto &cube : cubes) {
+                delete cube;
+            }
+            cubes.clear();
+            generateMenger(recursions, 1.0f, 0.0f, 0.0f, 0.0f);
+            prevRecursions = recursions;
+        }
+        
+        for (auto &cube : cubes) {
+            cube->draw(texture, shader);
+        }
+
+        glm::vec4 vec = glm::vec4(color.x, color.y, color.z, color.w);
+        shader.setUniform4fv("color", vec);
+
+        glm::mat4 view = glm::mat4(1.0f);
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, zoom));
+        view = glm::rotate(view, rotateX, glm::vec3(0.0f, 1.0f, 0.0f));
+        view = glm::rotate(view, rotateY, glm::vec3(1.0f, 0.0f, 0.0f));
+        unsigned viewLoc = glGetUniformLocation(shader.getProgramID(), "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+        glm::mat4 projection;
+        projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+        unsigned projectionLoc = glGetUniformLocation(shader.getProgramID(), "projection");
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        
         // glBindVertexArray(0); // no need to unbind it every time 
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
