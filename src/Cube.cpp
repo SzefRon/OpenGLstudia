@@ -16,10 +16,6 @@ Cube::Cube(float x, float y, float z, float size)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    glBindVertexArray(0);
-
     mat = glm::mat4(1);
     mat = glm::scale(mat, glm::vec3(size, size, size));
     float recSize = 1.0f / size;
