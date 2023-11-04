@@ -7,7 +7,6 @@
 class Cube
 {
 private:
-    float size;
     glm::mat4 mat;
     unsigned int VBO, VAO;
 

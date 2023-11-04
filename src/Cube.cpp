@@ -1,7 +1,6 @@
 #include "Cube.h"
 
 Cube::Cube(float x, float y, float z, float size)
-    : size(size)
 {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
