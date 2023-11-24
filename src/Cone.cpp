@@ -1,7 +1,7 @@
 #include "Cone.h"
 
-Cone::Cone(float x, float y, float z, int precision, float radius, float height)
-    : precision(precision)
+Cone::Cone(int precision, float diameter, float height)
+    : precision(precision), diameter(diameter), height(height)
 {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -11,12 +11,12 @@ Cone::Cone(float x, float y, float z, int precision, float radius, float height)
 
     vertices = new float[3 * (precision + 2)];
 
-    vertices[3 * precision] = 0.0f;
-    vertices[3 * precision + 1] = 0.0f;
-    vertices[3 * precision + 2] = 0.5f;
+    vertices[3 * precision + 0] = 0.0f;
+    vertices[3 * precision + 1] = 0.5f;
+    vertices[3 * precision + 2] = 0.0f;
 
-    vertices[3 * (precision + 1)] = 0.0f;
-    vertices[3 * (precision + 1) + 1] = 0.0f;
+    vertices[3 * (precision + 1) + 0] = 0.0f;
+    vertices[3 * (precision + 1) + 1] = -0.5f;
     vertices[3 * (precision + 1) + 2] = 0.0f;
 
     float pi = glm::pi<float>();
@@ -26,8 +26,8 @@ Cone::Cone(float x, float y, float z, int precision, float radius, float height)
         float x = 0.5f * glm::sin(2.0f * pi * i * recip);
         float y = 0.5f * glm::cos(2.0f * pi * i * recip);
         vertices[3 * i] = x;
-        vertices[3 * i + 1] = y;
-        vertices[3 * i + 2] = 0.0f;
+        vertices[3 * i + 1] = -0.5f;
+        vertices[3 * i + 2] = y;
     }
 
     indices = new unsigned int[6 * precision];
@@ -45,7 +45,7 @@ Cone::Cone(float x, float y, float z, int precision, float radius, float height)
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (precision + 1) * 3, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (precision + 2) * 3, vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(float) * precision * 6, indices, GL_STATIC_DRAW);
@@ -56,16 +56,20 @@ Cone::Cone(float x, float y, float z, int precision, float radius, float height)
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
     glBindVertexArray(0); 
 
-    mat = glm::mat4(1);
-    //mat = glm::scale(mat, glm::vec3(radius, radius, height));
-    mat = glm::translate(mat, glm::vec3(x, y, z));
+    model = glm::mat4(1);
 
     delete vertices, indices;
 }
 
 void Cone::draw(Shader &shader)
 {
-    shader.setUniformMat4("model", mat);
+    shader.setUniformMat4("model", model);
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6 * precision, GL_UNSIGNED_INT, 0);
+}
+
+void Cone::updateSelfChildren(float deltaTime)
+{
+    model = parent->model;
+    model = glm::scale(model, glm::vec3(diameter, height, diameter));
 }

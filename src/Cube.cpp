@@ -16,9 +16,8 @@ Cube::Cube(float x, float y, float z, float size)
     glEnableVertexAttribArray(1);
 
     mat = glm::mat4(1);
+    mat = glm::translate(mat, glm::vec3(x, y, z));
     mat = glm::scale(mat, glm::vec3(size, size, size));
-    float recSize = 1.0f / size;
-    mat = glm::translate(mat, glm::vec3(x * recSize, y * recSize, z * recSize));
 }
 
 Cube::~Cube()

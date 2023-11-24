@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "Cube.h"
 #include "Cone.h"
+#include "GraphNode.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <glm/glm.hpp>
@@ -39,29 +40,6 @@
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
-}
-
-std::deque<Cube *> cubes;
-float prevDestroyed = 0.0f;
-float destroyed = 0.0f;
-
-void generateMenger(unsigned int recursion, float size, float x, float y, float z)
-{
-    if (recursion == 1) {
-        cubes.push_back(new Cube(x, y, z, destroyed * size * (0.5f * sinf(3.14159265358979323f * x) + 0.5f) + (1.0f - destroyed) * size));
-    }
-    else {
-        float thirdSize = 0.33333333f * size;
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                for (int k = -1; k <= 1; k++) {
-                    if (i * j != 0 || j * k != 0 || k * i != 0) {
-                        generateMenger(recursion - 1, thirdSize, i * thirdSize + x, j * thirdSize + y, k * thirdSize + z);
-                    }
-                }
-            }
-        }
-    }
 }
 
 int main(int, char**)
@@ -142,9 +120,7 @@ int main(int, char**)
     //IM_ASSERT(font != NULL);
 
     ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    int recursions = 1;
-    int prevRecursions = 2;
-    float rotateX = 0.0f, rotateY = 0.0f, zoom = 1.0f;
+    float rotateX = 0.0f, rotateY = 90.0f, zoom = -10.0f;
 
     int width, height, nrChannels;
     unsigned char *data = stbi_load("..\\res\\textures\\stone.jpg", &width, &height, &nrChannels, 0);
@@ -165,10 +141,15 @@ int main(int, char**)
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
-    Cone *cone = new Cone(0.0f, 0.0f, 0.0f, 1000, 1.0f, 1.0f);
-    Cube *cube = new Cube(0.0f, 0.0f, 0.0f, 1.0f);
+    GraphNode *planetNode = new GraphNode(1.0f, 0.1f, 0.0f);
+    GraphNode *moonNode = new GraphNode(0.5f, 1.0f, 0.0f);
+    Cone *cone = new Cone(10, 0.5f, 0.5f);
+    Cone *cone2 = new Cone(10, 0.1f, 0.1f);
+    planetNode->addChild(cone);
+    planetNode->addChild(moonNode);
+    moonNode->addChild(cone2);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -185,20 +166,20 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        float deltaTime = 1.0f / ImGui::GetIO().Framerate;
+
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
             ImGui::Begin("Hello, motherfuckers!");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::SliderFloat("Zoom", &zoom, -3.0f, 0.0f);
+            ImGui::SliderFloat("Zoom", &zoom, -20.0f, 0.0f);
             ImGui::SliderAngle("Rotate X", &rotateX);
             ImGui::SliderAngle("Rotate Y", &rotateY);
-            ImGui::SliderInt("Number of recursions", &recursions, 1, 5);
-            ImGui::SliderFloat("Destroyed", &destroyed, 0.0f, 1.0f);
 
             ImGui::ColorEdit4("clear color", (float*)&color); // Edit 3 floats representing a color
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", deltaTime, ImGui::GetIO().Framerate);
             ImGui::End();
         }
 
@@ -214,22 +195,11 @@ int main(int, char**)
 
         textureShader.use();
 
-        if (prevRecursions != recursions || prevDestroyed != destroyed) {
-            for (auto &cube : cubes) {
-                delete cube;
-            }
-            cubes.clear();
-            //generateMenger(recursions, 1.0f, 0.0f, 0.0f, 0.0f);
-            prevRecursions = recursions;
-        }
-        
-        /*for (auto &cube : cubes) {
-            cube->draw(texture, textureShader);
-        }*/
-
         colorShader.use();
 
+        planetNode->updateSelfChildren(deltaTime);
         cone->draw(colorShader);
+        cone2->draw(colorShader);
         //cube->draw(texture, colorShader);
 
         glm::vec4 vec = glm::vec4(color.x, color.y, color.z, color.w);
