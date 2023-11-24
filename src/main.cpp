@@ -6,6 +6,8 @@
 #include "Cube.h"
 #include "Cone.h"
 #include "GraphNode.h"
+#include "vMesh.h"
+#include "vModel.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <glm/glm.hpp>
@@ -120,7 +122,9 @@ int main(int, char**)
     //IM_ASSERT(font != NULL);
 
     ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    float rotateX = 0.0f, rotateY = 90.0f, zoom = -10.0f;
+    float rotateX = 0.0f, rotateY = 3.14159265f * 0.5f, zoom = -10.0f, speed = 1.0f;
+    bool polygonMode = false, vsyncMode = true;
+    double lastFrame = 0.0, currFrame = 0.0f, deltaTime = 0.0;
 
     int width, height, nrChannels;
     unsigned char *data = stbi_load("..\\res\\textures\\stone.jpg", &width, &height, &nrChannels, 0);
@@ -149,11 +153,13 @@ int main(int, char**)
     planetNode->addChild(moonNode);
     moonNode->addChild(cone2);
 
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    std::string path("abc");
+    //vModel *model = new vModel(path.c_str());
 
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
+        //std::cout << deltaTime << ' ';
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -166,24 +172,34 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        float deltaTime = 1.0f / ImGui::GetIO().Framerate;
-
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
             ImGui::Begin("Hello, motherfuckers!");                          // Create a window called "Hello, world!" and append into it.
 
             ImGui::SliderFloat("Zoom", &zoom, -20.0f, 0.0f);
-            ImGui::SliderAngle("Rotate X", &rotateX);
-            ImGui::SliderAngle("Rotate Y", &rotateY);
+            ImGui::SliderAngle("Rotate X", &rotateX, -180.0f, 180.0f);
+            ImGui::SliderAngle("Rotate Y", &rotateY, -180.0f, 180.0f);
+            ImGui::SliderFloat("Speed", &speed, -3.0f, 3.0f, "%.1f");
 
-            ImGui::ColorEdit4("clear color", (float*)&color); // Edit 3 floats representing a color
+            ImGui::Checkbox("Wireframe Mode", &polygonMode);
+            ImGui::Checkbox("VSync", &vsyncMode);
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", deltaTime, ImGui::GetIO().Framerate);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
         }
 
+        if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        if (vsyncMode) glfwSwapInterval(1);
+        else glfwSwapInterval(0);
+
         // Rendering
+
+        currFrame = glfwGetTime();
+        deltaTime = speed * (currFrame - lastFrame);
+        lastFrame = currFrame;
 
         ImGui::Render();
         int display_w, display_h;
@@ -192,8 +208,6 @@ int main(int, char**)
         glViewport(0, 0, display_w, display_h);
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        textureShader.use();
 
         colorShader.use();
 
