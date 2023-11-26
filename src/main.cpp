@@ -8,6 +8,7 @@
 #include "GraphNode.h"
 #include "vMesh.h"
 #include "vModel.h"
+#include "Orbit.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <glm/glm.hpp>
@@ -152,11 +153,10 @@ int main(int, char**)
     std::vector<GraphNode *> colorModels;
     std::vector<Cone *> cones;
 
-    GraphNode *planetNode, *planetRotationNode, *moonNode, *moonRotationNode,
-        *doubleMoonNode, *doubleMoonRotationNode;
-    Cone *cone;
-    vModel *model;
-    Cube *cube;
+    GraphNode *planetNode, *planetRotationNode,
+              *moonNode, *moonRotationNode,
+              *doubleMoonNode, *doubleMoonRotationNode;
+    Cone *cone; vModel *model; Cube *cube; Orbit *orbit;
 
     GraphNode *sunNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
         // Sun
@@ -169,6 +169,9 @@ int main(int, char**)
         // Planet 1
         planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 0.0f);
         sunNode->addChild(planetNode);
+        orbit = new Orbit(100, 3.0f);
+        sunNode->addChild(orbit);
+        colorModels.push_back(orbit);
             planetRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 1.0f);
             planetNode->addChild(planetRotationNode);
                 cone = new Cone(precision, 1.0f, 0.5f);
