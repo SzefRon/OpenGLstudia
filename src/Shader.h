@@ -20,4 +20,5 @@ public:
     const unsigned int &getProgramID();
     void setUniformMat4(const char *name, glm::mat4 &val);
     void setUniform4fv(const char *name, glm::vec4 &val);
+    void setUInt(const char *name, unsigned int &val);
 };

@@ -3,12 +3,13 @@
 #include <glad/glad.h>
 
 #include "Shader.h"
+#include "GraphNode.h"
 
-class Cube
+class Cube : public GraphNode
 {
 private:
-    glm::mat4 mat;
     unsigned int VBO, VAO;
+    float size;
 
     constexpr static const float vertices[] = {
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -56,5 +57,7 @@ private:
 public:
     Cube(float x, float y, float z, float size);
     ~Cube();
-    void draw(unsigned int texture, Shader &shader);
+    void draw(Shader &shader) override;
+    
+    void updateSelfChildren(float deltaTime);
 };

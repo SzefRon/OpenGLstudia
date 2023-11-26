@@ -84,3 +84,9 @@ void Shader::setUniform4fv(const char * name, glm::vec4 &val)
     unsigned location = glGetUniformLocation(programID, name);
     glUniform4fv(location, 1, glm::value_ptr(val));
 }
+
+void Shader::setUInt(const char *name, unsigned int &val)
+{
+    unsigned location = glGetUniformLocation(programID, name);
+    glUniform1ui(location, val);
+}

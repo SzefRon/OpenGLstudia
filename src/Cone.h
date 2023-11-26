@@ -18,6 +18,6 @@ public:
     Cone(int precision, float diameter, float height);
     ~Cone() = default;
 
-    void draw(Shader &shader);
+    void draw(Shader &shader) override;
     void updateSelfChildren(float deltaTime) override;
 };

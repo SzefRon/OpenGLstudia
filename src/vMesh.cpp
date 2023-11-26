@@ -34,7 +34,7 @@ vMesh::vMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, st
     setupMesh();
 }
 
-void vMesh::Draw(Shader &shader)
+void vMesh::draw(Shader &shader)
 {
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
@@ -49,7 +49,7 @@ void vMesh::Draw(Shader &shader)
         else if(name == "texture_specular")
             number = std::to_string(specularNr++);
 
-        //shader.setInt(("material." + name + number).c_str(), i);
+        shader.setUInt(("material." + name + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);

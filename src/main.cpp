@@ -92,6 +92,8 @@ int main(int, char**)
     Shader textureShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\texture.frag");
     Shader colorShader("..\\res\\shaders\\color.vert", "..\\res\\shaders\\color.frag");
 
+    stbi_set_flip_vertically_on_load(true);
+
     // Setup Dear ImGui binding
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -145,16 +147,32 @@ int main(int, char**)
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
-    GraphNode *planetNode = new GraphNode(1.0f, 0.1f, 0.0f);
-    GraphNode *moonNode = new GraphNode(0.5f, 1.0f, 0.0f);
-    Cone *cone = new Cone(10, 0.5f, 0.5f);
-    Cone *cone2 = new Cone(10, 0.1f, 0.1f);
-    planetNode->addChild(cone);
-    planetNode->addChild(moonNode);
-    moonNode->addChild(cone2);
+    std::vector<GraphNode *> textureModels;
+    std::vector<GraphNode *> colorModels;
 
-    std::string path("abc");
-    //vModel *model = new vModel(path.c_str());
+    GraphNode *sunNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
+        GraphNode *sunRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 0.0f);
+        sunNode->addChild(sunRotationNode);
+            std::string sunModelPath("..\\res\\models\\sun\\sun.obj");
+            vModel *sun = new vModel(sunModelPath.c_str());
+            textureModels.push_back(sun);
+            sunRotationNode->addChild(sun); 
+
+        GraphNode *planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 0.0f);
+        sunNode->addChild(planetNode);
+            Cone *cone = new Cone(10, 1.0f, 0.5f);
+            colorModels.push_back(cone);
+            planetNode->addChild(cone);
+
+            GraphNode *moonNode = new GraphNode(0.5f, 1.0f, 0.0f, 0.0f);
+            planetNode->addChild(moonNode);
+                Cone *cone2 = new Cone(10, 0.1f, 0.1f);
+                colorModels.push_back(cone2);
+                moonNode->addChild(cone2);
+
+
+    std::string breadorusModelPath("..\\res\\models\\breadorus\\breadorus.obj");
+    vModel *breadorus = new vModel(breadorusModelPath.c_str());
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -206,31 +224,40 @@ int main(int, char**)
         glfwMakeContextCurrent(window);
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        colorShader.use();
-
-        planetNode->updateSelfChildren(deltaTime);
-        cone->draw(colorShader);
-        cone2->draw(colorShader);
-        //cube->draw(texture, colorShader);
-
         glm::vec4 vec = glm::vec4(color.x, color.y, color.z, color.w);
-        colorShader.setUniform4fv("color", vec);
+        
+        glm::mat4 model = glm::mat4(1);
 
         glm::mat4 view = glm::mat4(1.0f);
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, zoom));
         view = glm::rotate(view, rotateX, glm::vec3(0.0f, 1.0f, 0.0f));
         view = glm::rotate(view, rotateY, glm::vec3(1.0f, 0.0f, 0.0f));
-        unsigned viewLoc = glGetUniformLocation(colorShader.getProgramID(), "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(45.0f), (float)(display_w) / display_h, 0.1f, 100.0f);
-        unsigned projectionLoc = glGetUniformLocation(colorShader.getProgramID(), "projection");
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+        sunNode->updateSelfChildren(deltaTime);
+
+        colorShader.use();
+        colorShader.setUniformMat4("view", view);
+        colorShader.setUniformMat4("projection", projection);
+        colorShader.setUniform4fv("color", vec);
+
+        for (auto &colorModel : colorModels) {
+            colorModel->draw(colorShader);
+        }
+
+        textureShader.use();
+        textureShader.setUniformMat4("model", model);
+        textureShader.setUniformMat4("view", view);
+        textureShader.setUniformMat4("projection", projection);
+
+        for (auto &textureModel : textureModels) {
+            textureModel->draw(textureShader);
+        }
         
         // glBindVertexArray(0); // no need to unbind it every time 
  
