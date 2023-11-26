@@ -58,8 +58,8 @@ void Cone::generate()
     delete[] indices;
 }
 
-Cone::Cone(int precision, float diameter, float height)
-    : precision(precision), diameter(diameter), height(height)
+Cone::Cone(int precision, float diameter, float height, glm::vec4 color)
+    : precision(precision), diameter(diameter), height(height), color(color)
 {
     generate();
 }
@@ -76,6 +76,7 @@ void Cone::changePrecision(int precision)
 void Cone::draw(Shader &shader)
 {
     shader.setUniformMat4("model", model);
+    shader.setUniform4fv("color", color);
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6 * precision, GL_UNSIGNED_INT, 0);
 }

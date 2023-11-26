@@ -12,10 +12,11 @@ private:
     int precision;
     float diameter, height;
     unsigned int VBO, VAO, EBO;
+    glm::vec4 color;
 
     void generate();
 public:
-    Cone(int precision, float diameter, float height);
+    Cone(int precision, float diameter, float height, glm::vec4 color);
     ~Cone() = default;
 
     void changePrecision(int precision);

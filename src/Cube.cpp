@@ -1,7 +1,7 @@
 #include "Cube.h"
 
-Cube::Cube(float size)
-    : size(size)
+Cube::Cube(float size, glm::vec4 color)
+    : size(size), color(color)
 {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -28,8 +28,7 @@ Cube::~Cube()
 void Cube::draw(Shader &shader)
 {
     shader.setUniformMat4("model", model);
-    /*glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);*/
+    shader.setUniform4fv("color", color);
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }

@@ -11,11 +11,12 @@ class Orbit : public GraphNode
 private:
     int precision;
     float radius;
+    glm::vec4 color;
     unsigned int VBO, VAO;
 
     void generate();
 public:
-    Orbit(int precision, float radius);
+    Orbit(int precision, float radius, glm::vec4 color);
     ~Orbit() = default;
 
     void changePrecision(int precision);

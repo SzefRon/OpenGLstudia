@@ -29,8 +29,8 @@ void Orbit::generate()
     model = glm::mat4(1);
 }
 
-Orbit::Orbit(int precision, float radius)
-    : precision(precision), radius(radius)
+Orbit::Orbit(int precision, float radius, glm::vec4 color)
+    : precision(precision), radius(radius), color(color)
 {
     generate();
 }
@@ -46,6 +46,7 @@ void Orbit::changePrecision(int precision)
 void Orbit::draw(Shader &shader)
 {
     shader.setUniformMat4("model", model);
+    shader.setUniform4fv("color", color);
     glBindVertexArray(VAO);
     glDrawArrays(GL_LINE_LOOP, 0, precision);
 }

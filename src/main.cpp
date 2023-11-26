@@ -169,12 +169,12 @@ int main(int, char**)
         // Planet 1
         planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 0.0f);
         sunNode->addChild(planetNode);
-        orbit = new Orbit(100, 3.0f);
+        orbit = new Orbit(100, 3.0f, glm::vec4(0.5f, 0.5f, 0.5f, 0.5f));
         sunNode->addChild(orbit);
         colorModels.push_back(orbit);
             planetRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 1.0f);
             planetNode->addChild(planetRotationNode);
-                cone = new Cone(precision, 1.0f, 0.5f);
+                cone = new Cone(precision, 1.0f, 0.5f, glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
                 colorModels.push_back(cone);
                 cones.push_back(cone);
                 planetRotationNode->addChild(cone);
@@ -182,9 +182,12 @@ int main(int, char**)
             // Moon 1
             moonNode = new GraphNode(0.5f, 1.0f, 0.0f, 0.0f);
             planetNode->addChild(moonNode);
+            orbit = new Orbit(100, 0.5f, glm::vec4(1.0f, 0.5f, 0.5f, 0.5f));
+            planetNode->addChild(orbit);
+            colorModels.push_back(orbit);
                 moonRotationNode = new GraphNode(0.0f, -1.0f, 0.0f, 0.0f);
                 moonNode->addChild(moonRotationNode);
-                    cone = new Cone(precision, 0.1f, 0.1f);
+                    cone = new Cone(precision, 0.1f, 0.1f, glm::vec4(1.0f, 0.5f, 0.5f, 1.0f));
                     colorModels.push_back(cone);
                     cones.push_back(cone);
                     moonRotationNode->addChild(cone);
@@ -192,9 +195,12 @@ int main(int, char**)
             // Moon 2
             moonNode = new GraphNode(1.0f, 2.0f, 1.0f, 0.0f);
             planetNode->addChild(moonNode);
+            orbit = new Orbit(100, 1.0f, glm::vec4(0.5f, 1.0f, 0.5f, 0.5f));
+            planetNode->addChild(orbit);
+            colorModels.push_back(orbit);
                 moonRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 0.0f);
                 moonNode->addChild(moonRotationNode);
-                    cone = new Cone(precision, 0.2f, 0.2f);
+                    cone = new Cone(precision, 0.2f, 0.2f, glm::vec4(0.5f, 1.0f, 0.5f, 1.0f));
                     colorModels.push_back(cone);
                     cones.push_back(cone);
                     moonRotationNode->addChild(cone);
@@ -202,6 +208,9 @@ int main(int, char**)
         // Planet 2
         planetNode = new GraphNode(5.0f, 0.2f, 2.0f, 0.0f);
         sunNode->addChild(planetNode);
+        orbit = new Orbit(100, 5.0f, glm::vec4(1.0f, 1.0f, 0.0f, 0.5f));
+        sunNode->addChild(orbit);
+        colorModels.push_back(orbit);
             planetRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 1.0f);
             planetNode->addChild(planetRotationNode);
                 model = new vModel("..\\res\\models\\breadorus\\breadorus.obj", 1.0f);
@@ -211,6 +220,9 @@ int main(int, char**)
             // Moon 1
             moonNode = new GraphNode(1.5f, -2.0f, 1.0f, 0.0f);
             planetNode->addChild(moonNode);
+            orbit = new Orbit(100, 1.5f, glm::vec4(1.0f, 1.0f, 0.0f, 0.5f));
+            planetNode->addChild(orbit);
+            colorModels.push_back(orbit);
                 moonRotationNode = new GraphNode(0.0f, 4.0f, 0.0f, -2.0f);
                 moonNode->addChild(moonRotationNode);
                     model = new vModel("..\\res\\models\\breadorus\\breadorus.obj", 0.5f);
@@ -220,6 +232,9 @@ int main(int, char**)
                 // Moon moon 1
                 doubleMoonNode = new GraphNode(0.5f, -5.0f, 1.0f, 0.0f);
                 moonNode->addChild(doubleMoonNode);
+                orbit = new Orbit(100, 0.5f, glm::vec4(1.0f, 1.0f, 0.0f, 0.5f));
+                moonNode->addChild(orbit);
+                colorModels.push_back(orbit);
                     doubleMoonRotationNode = new GraphNode(0.0f, -2.0f, 0.0f, 3.0f);
                     doubleMoonNode->addChild(doubleMoonRotationNode);
                         model = new vModel("..\\res\\models\\breadorus\\breadorus.obj", 0.2f);
@@ -229,36 +244,46 @@ int main(int, char**)
         // Planet 3
         planetNode = new GraphNode(9.0f, 0.1f, 0.3f, 0.0f);
         sunNode->addChild(planetNode);
+        orbit = new Orbit(100, 9.0f, glm::vec4(1.0f, 1.0f, 1.0f, 0.5f));
+        sunNode->addChild(orbit);
+        colorModels.push_back(orbit);
             planetRotationNode = new GraphNode(0.0f, 0.1f, 0.0f, -1.0f);
             planetNode->addChild(planetRotationNode);
-                cube = new Cube(1.0f);
+                cube = new Cube(1.0f, glm::vec4(0.5f, 0.5f, 1.0f, 1.0f));
                 colorModels.push_back(cube);
                 planetRotationNode->addChild(cube);
             
             // Moon 1
             moonNode = new GraphNode(1.0f, 0.4f, 0.0f, 0.0f);
             planetNode->addChild(moonNode);
+            orbit = new Orbit(100, 1.0f, glm::vec4(1.0f, 1.0f, 0.5f, 0.5f));
+            planetNode->addChild(orbit);
+            colorModels.push_back(orbit);
                 moonRotationNode = new GraphNode(0.0f, 5.0f, 0.0f, -0.1f);
                 moonNode->addChild(moonRotationNode);
-                    cube = new Cube(0.5f);
+                    cube = new Cube(0.5f, glm::vec4(1.0f, 1.0f, 0.5f, 1.0f));
                     colorModels.push_back(cube);
                     moonRotationNode->addChild(cube);
 
         // Planet 4
         planetNode = new GraphNode(9.0f, 0.1f, 1.8f, 0.0f);
         sunNode->addChild(planetNode);
+        
             planetRotationNode = new GraphNode(0.0f, -0.5f, 0.0f, 2.0f);
             planetNode->addChild(planetRotationNode);
-                cube = new Cube(1.0f);
+                cube = new Cube(1.0f, glm::vec4(1.0f, 0.5f, 1.0f, 1.0f));
                 colorModels.push_back(cube);
                 planetRotationNode->addChild(cube);
             
             // Moon 1
             moonNode = new GraphNode(0.7f, 0.4f, 0.0f, 0.0f);
             planetNode->addChild(moonNode);
+            orbit = new Orbit(100, 0.7f, glm::vec4(0.5f, 1.0f, 1.0f, 0.5f));
+            planetNode->addChild(orbit);
+            colorModels.push_back(orbit);
                 moonRotationNode = new GraphNode(0.0f, -5.0f, 0.0f, -0.1f);
                 moonNode->addChild(moonRotationNode);
-                    cube = new Cube(0.3f);
+                    cube = new Cube(0.3f, glm::vec4(0.5f, 1.0f, 1.0f, 1.0f));
                     colorModels.push_back(cube);
                     moonRotationNode->addChild(cube);
 
@@ -267,16 +292,19 @@ int main(int, char**)
         sunNode->addChild(planetNode);
             planetRotationNode = new GraphNode(0.0f, -0.5f, 0.0f, 2.0f);
             planetNode->addChild(planetRotationNode);
-                cube = new Cube(1.0f);
+                cube = new Cube(1.0f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
                 colorModels.push_back(cube);
                 planetRotationNode->addChild(cube);
 
             // Moon 1
             moonNode = new GraphNode(1.5f, 0.4f, 0.0f, 0.0f);
             planetNode->addChild(moonNode);
+            orbit = new Orbit(100, 1.5f, glm::vec4(0.0f, 0.5f, 1.0f, 0.5f));
+            planetNode->addChild(orbit);
+            colorModels.push_back(orbit);
                 moonRotationNode = new GraphNode(0.0f, 2.0f, 0.0f, -0.1f);
                 moonNode->addChild(moonRotationNode);
-                    cube = new Cube(0.7f);
+                    cube = new Cube(0.7f, glm::vec4(0.0f, 0.5f, 1.0f, 1.0f));
                     colorModels.push_back(cube);
                     moonRotationNode->addChild(cube);
 
