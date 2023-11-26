@@ -143,7 +143,7 @@ int main(int, char**)
     glEnable(GL_DEPTH_TEST);
 
     ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    float rotateX = 0.0f, rotateY = 3.14159265f * 0.5f, zoom = -10.0f, speed = 1.0f;
+    float rotateX = 0.0f, rotateY = 3.14159265f * 0.5f, zoom = -30.0f, speed = 1.0f;
     bool polygonMode = false, vsyncMode = true, precisionChanged = false;
     double lastFrame = 0.0, currFrame = 0.0f, deltaTime = 0.0;
     int precision = 10.0f;
@@ -152,31 +152,131 @@ int main(int, char**)
     std::vector<GraphNode *> colorModels;
     std::vector<Cone *> cones;
 
+    GraphNode *planetNode, *planetRotationNode, *moonNode, *moonRotationNode,
+        *doubleMoonNode, *doubleMoonRotationNode;
+    Cone *cone;
+    vModel *model;
+    Cube *cube;
+
     GraphNode *sunNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
-        GraphNode *sunRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 1.0f);
+        // Sun
+        GraphNode *sunRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 0.0f);
         sunNode->addChild(sunRotationNode);
-            std::string sunModelPath("..\\res\\models\\sun\\sun.obj");
-            vModel *sun = new vModel(sunModelPath.c_str());
-            textureModels.push_back(sun);
-            sunRotationNode->addChild(sun); 
+            model = new vModel("..\\res\\models\\sun\\sun.obj", 1.5f);
+            textureModels.push_back(model);
+            sunRotationNode->addChild(model); 
 
-        GraphNode *planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 0.0f);
+        // Planet 1
+        planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 0.0f);
         sunNode->addChild(planetNode);
-            Cone *cone1 = new Cone(precision, 1.0f, 0.5f);
-            colorModels.push_back(cone1);
-            cones.push_back(cone1);
-            planetNode->addChild(cone1);
+            planetRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 1.0f);
+            planetNode->addChild(planetRotationNode);
+                cone = new Cone(precision, 1.0f, 0.5f);
+                colorModels.push_back(cone);
+                cones.push_back(cone);
+                planetRotationNode->addChild(cone);
 
-            GraphNode *moonNode = new GraphNode(0.5f, 1.0f, 0.0f, 0.0f);
+            // Moon 1
+            moonNode = new GraphNode(0.5f, 1.0f, 0.0f, 0.0f);
             planetNode->addChild(moonNode);
-                Cone *cone2 = new Cone(precision, 0.1f, 0.1f);
-                colorModels.push_back(cone2);
-                cones.push_back(cone2);
-                moonNode->addChild(cone2);
+                moonRotationNode = new GraphNode(0.0f, -1.0f, 0.0f, 0.0f);
+                moonNode->addChild(moonRotationNode);
+                    cone = new Cone(precision, 0.1f, 0.1f);
+                    colorModels.push_back(cone);
+                    cones.push_back(cone);
+                    moonRotationNode->addChild(cone);
 
+            // Moon 2
+            moonNode = new GraphNode(1.0f, 2.0f, 1.0f, 0.0f);
+            planetNode->addChild(moonNode);
+                moonRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 0.0f);
+                moonNode->addChild(moonRotationNode);
+                    cone = new Cone(precision, 0.2f, 0.2f);
+                    colorModels.push_back(cone);
+                    cones.push_back(cone);
+                    moonRotationNode->addChild(cone);
+        
+        // Planet 2
+        planetNode = new GraphNode(5.0f, 0.2f, 2.0f, 0.0f);
+        sunNode->addChild(planetNode);
+            planetRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 1.0f);
+            planetNode->addChild(planetRotationNode);
+                model = new vModel("..\\res\\models\\breadorus\\breadorus.obj", 1.0f);
+                textureModels.push_back(model);
+                planetRotationNode->addChild(model);
 
-    std::string breadorusModelPath("..\\res\\models\\breadorus\\breadorus.obj");
-    vModel *breadorus = new vModel(breadorusModelPath.c_str());
+            // Moon 1
+            moonNode = new GraphNode(1.5f, -2.0f, 1.0f, 0.0f);
+            planetNode->addChild(moonNode);
+                moonRotationNode = new GraphNode(0.0f, 4.0f, 0.0f, -2.0f);
+                moonNode->addChild(moonRotationNode);
+                    model = new vModel("..\\res\\models\\breadorus\\breadorus.obj", 0.5f);
+                    textureModels.push_back(model);
+                    moonRotationNode->addChild(model);
+
+                // Moon moon 1
+                doubleMoonNode = new GraphNode(0.5f, -5.0f, 1.0f, 0.0f);
+                moonNode->addChild(doubleMoonNode);
+                    doubleMoonRotationNode = new GraphNode(0.0f, -2.0f, 0.0f, 3.0f);
+                    doubleMoonNode->addChild(doubleMoonRotationNode);
+                        model = new vModel("..\\res\\models\\breadorus\\breadorus.obj", 0.2f);
+                        textureModels.push_back(model);
+                        doubleMoonRotationNode->addChild(model);
+
+        // Planet 3
+        planetNode = new GraphNode(9.0f, 0.1f, 0.3f, 0.0f);
+        sunNode->addChild(planetNode);
+            planetRotationNode = new GraphNode(0.0f, 0.1f, 0.0f, -1.0f);
+            planetNode->addChild(planetRotationNode);
+                cube = new Cube(1.0f);
+                colorModels.push_back(cube);
+                planetRotationNode->addChild(cube);
+            
+            // Moon 1
+            moonNode = new GraphNode(1.0f, 0.4f, 0.0f, 0.0f);
+            planetNode->addChild(moonNode);
+                moonRotationNode = new GraphNode(0.0f, 5.0f, 0.0f, -0.1f);
+                moonNode->addChild(moonRotationNode);
+                    cube = new Cube(0.5f);
+                    colorModels.push_back(cube);
+                    moonRotationNode->addChild(cube);
+
+        // Planet 4
+        planetNode = new GraphNode(9.0f, 0.1f, 1.8f, 0.0f);
+        sunNode->addChild(planetNode);
+            planetRotationNode = new GraphNode(0.0f, -0.5f, 0.0f, 2.0f);
+            planetNode->addChild(planetRotationNode);
+                cube = new Cube(1.0f);
+                colorModels.push_back(cube);
+                planetRotationNode->addChild(cube);
+            
+            // Moon 1
+            moonNode = new GraphNode(0.7f, 0.4f, 0.0f, 0.0f);
+            planetNode->addChild(moonNode);
+                moonRotationNode = new GraphNode(0.0f, -5.0f, 0.0f, -0.1f);
+                moonNode->addChild(moonRotationNode);
+                    cube = new Cube(0.3f);
+                    colorModels.push_back(cube);
+                    moonRotationNode->addChild(cube);
+
+        // Planet 5
+        planetNode = new GraphNode(9.0f, 0.1f, 3.5f, 0.0f);
+        sunNode->addChild(planetNode);
+            planetRotationNode = new GraphNode(0.0f, -0.5f, 0.0f, 2.0f);
+            planetNode->addChild(planetRotationNode);
+                cube = new Cube(1.0f);
+                colorModels.push_back(cube);
+                planetRotationNode->addChild(cube);
+
+            // Moon 1
+            moonNode = new GraphNode(1.5f, 0.4f, 0.0f, 0.0f);
+            planetNode->addChild(moonNode);
+                moonRotationNode = new GraphNode(0.0f, 2.0f, 0.0f, -0.1f);
+                moonNode->addChild(moonRotationNode);
+                    cube = new Cube(0.7f);
+                    colorModels.push_back(cube);
+                    moonRotationNode->addChild(cube);
+
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -199,11 +299,11 @@ int main(int, char**)
             ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
             ImGui::Begin("Hello, motherfuckers!");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::SliderFloat("Zoom", &zoom, -20.0f, 0.0f);
+            ImGui::SliderFloat("Zoom", &zoom, -30.0f, 0.0f);
             ImGui::SliderAngle("Rotate X", &rotateX, -180.0f, 180.0f);
             ImGui::SliderAngle("Rotate Y", &rotateY, -180.0f, 180.0f);
             ImGui::SliderFloat("Speed", &speed, -3.0f, 3.0f, "%.1f");
-            precisionChanged = ImGui::SliderInt("Precision", &precision, 1, 20);
+            precisionChanged = ImGui::SliderInt("Precision", &precision, 2, 20);
 
             ImGui::Checkbox("Wireframe Mode", &polygonMode);
             ImGui::Checkbox("VSync", &vsyncMode);

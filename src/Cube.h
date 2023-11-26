@@ -55,7 +55,7 @@ private:
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 public:
-    Cube(float x, float y, float z, float size);
+    Cube(float size);
     ~Cube();
     void draw(Shader &shader) override;
     

@@ -142,6 +142,12 @@ unsigned int vModel::textureFromFile(const char *path, const std::string &direct
     return textureID;
 }
 
+vModel::vModel(const char *path, float size)
+    : size(size)
+{
+    loadModel(path);
+}
+
 void vModel::draw(Shader &shader)
 {
     shader.setUniformMat4("model", model);
@@ -153,4 +159,5 @@ void vModel::draw(Shader &shader)
 void vModel::updateSelfChildren(float deltaTime)
 {
     model = parent->model;
+    model = glm::scale(model, glm::vec3(size));
 }
