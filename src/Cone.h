@@ -11,12 +11,14 @@ class Cone : public GraphNode
 private:
     int precision;
     float diameter, height;
-    float *vertices;
-    unsigned int *indices;
     unsigned int VBO, VAO, EBO;
+
+    void generate();
 public:
     Cone(int precision, float diameter, float height);
     ~Cone() = default;
+
+    void changePrecision(int precision);
 
     void draw(Shader &shader) override;
     void updateSelfChildren(float deltaTime) override;

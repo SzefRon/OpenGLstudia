@@ -1,7 +1,6 @@
 #include "Cone.h"
 
-Cone::Cone(int precision, float diameter, float height)
-    : precision(precision), diameter(diameter), height(height)
+void Cone::generate()
 {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -9,7 +8,7 @@ Cone::Cone(int precision, float diameter, float height)
     // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
     glBindVertexArray(VAO);
 
-    vertices = new float[3 * (precision + 2)];
+    float *vertices = new float[3 * (precision + 2)];
 
     vertices[3 * precision + 0] = 0.0f;
     vertices[3 * precision + 1] = 0.5f;
@@ -30,7 +29,7 @@ Cone::Cone(int precision, float diameter, float height)
         vertices[3 * i + 2] = y;
     }
 
-    indices = new unsigned int[6 * precision];
+    unsigned int *indices = new unsigned int[6 * precision];
 
     for (int i = 0; i < precision; i++) {
         // Bottom
@@ -45,20 +44,33 @@ Cone::Cone(int precision, float diameter, float height)
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (precision + 2) * 3, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (precision + 2) * 3, vertices, GL_DYNAMIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(float) * precision * 6, indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(float) * precision * 6, indices, GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    glBindVertexArray(0); 
-
     model = glm::mat4(1);
 
-    delete vertices, indices;
+    delete[] vertices;
+    delete[] indices;
+}
+
+Cone::Cone(int precision, float diameter, float height)
+    : precision(precision), diameter(diameter), height(height)
+{
+    generate();
+}
+
+void Cone::changePrecision(int precision)
+{
+    this->precision = precision;
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+    generate();
 }
 
 void Cone::draw(Shader &shader)

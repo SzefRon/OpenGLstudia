@@ -123,11 +123,6 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    float rotateX = 0.0f, rotateY = 3.14159265f * 0.5f, zoom = -10.0f, speed = 1.0f;
-    bool polygonMode = false, vsyncMode = true;
-    double lastFrame = 0.0, currFrame = 0.0f, deltaTime = 0.0;
-
     int width, height, nrChannels;
     unsigned char *data = stbi_load("..\\res\\textures\\stone.jpg", &width, &height, &nrChannels, 0);
 
@@ -147,11 +142,18 @@ int main(int, char**)
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
+    ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    float rotateX = 0.0f, rotateY = 3.14159265f * 0.5f, zoom = -10.0f, speed = 1.0f;
+    bool polygonMode = false, vsyncMode = true, precisionChanged = false;
+    double lastFrame = 0.0, currFrame = 0.0f, deltaTime = 0.0;
+    int precision = 10.0f;
+
     std::vector<GraphNode *> textureModels;
     std::vector<GraphNode *> colorModels;
+    std::vector<Cone *> cones;
 
     GraphNode *sunNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
-        GraphNode *sunRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 0.0f);
+        GraphNode *sunRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 1.0f);
         sunNode->addChild(sunRotationNode);
             std::string sunModelPath("..\\res\\models\\sun\\sun.obj");
             vModel *sun = new vModel(sunModelPath.c_str());
@@ -160,14 +162,16 @@ int main(int, char**)
 
         GraphNode *planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 0.0f);
         sunNode->addChild(planetNode);
-            Cone *cone = new Cone(10, 1.0f, 0.5f);
-            colorModels.push_back(cone);
-            planetNode->addChild(cone);
+            Cone *cone1 = new Cone(precision, 1.0f, 0.5f);
+            colorModels.push_back(cone1);
+            cones.push_back(cone1);
+            planetNode->addChild(cone1);
 
             GraphNode *moonNode = new GraphNode(0.5f, 1.0f, 0.0f, 0.0f);
             planetNode->addChild(moonNode);
-                Cone *cone2 = new Cone(10, 0.1f, 0.1f);
+                Cone *cone2 = new Cone(precision, 0.1f, 0.1f);
                 colorModels.push_back(cone2);
+                cones.push_back(cone2);
                 moonNode->addChild(cone2);
 
 
@@ -199,6 +203,7 @@ int main(int, char**)
             ImGui::SliderAngle("Rotate X", &rotateX, -180.0f, 180.0f);
             ImGui::SliderAngle("Rotate Y", &rotateY, -180.0f, 180.0f);
             ImGui::SliderFloat("Speed", &speed, -3.0f, 3.0f, "%.1f");
+            precisionChanged = ImGui::SliderInt("Precision", &precision, 1, 20);
 
             ImGui::Checkbox("Wireframe Mode", &polygonMode);
             ImGui::Checkbox("VSync", &vsyncMode);
@@ -212,6 +217,12 @@ int main(int, char**)
 
         if (vsyncMode) glfwSwapInterval(1);
         else glfwSwapInterval(0);
+
+        if (precisionChanged) {
+            for (auto &cone : cones) {
+                cone->changePrecision(precision);
+            }
+        }
 
         // Rendering
 
