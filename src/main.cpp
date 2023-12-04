@@ -143,9 +143,11 @@ int main(int, char**)
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
+    // Loop variables
+
     ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     float rotateX = 0.0f, rotateY = 3.14159265f * 0.5f, zoom = -30.0f, speed = 1.0f;
-    bool polygonMode = false, vsyncMode = true, precisionChanged = false;
+    bool polygonMode = false, polygonChanged = false, vsyncMode = true, vsyncChanged = false, precisionChanged = false;
     double lastFrame = 0.0, currFrame = 0.0f, deltaTime = 0.0;
     int precision = 10.0f;
 
@@ -158,6 +160,8 @@ int main(int, char**)
               *doubleMoonNode, *doubleMoonRotationNode;
     Cone *cone; vModel *model; Cube *cube; Orbit *orbit;
 
+    // Scene preparation
+
     GraphNode *sunNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
         // Sun
         GraphNode *sunRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 0.0f);
@@ -167,7 +171,7 @@ int main(int, char**)
             sunRotationNode->addChild(model); 
 
         // Planet 1
-        planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 0.0f);
+        planetNode = new GraphNode(3.0f, 0.1f, 0.0f, 1.0f);
         sunNode->addChild(planetNode);
         orbit = new Orbit(100, 3.0f, glm::vec4(0.5f, 0.5f, 0.5f, 0.5f));
         sunNode->addChild(orbit);
@@ -336,18 +340,22 @@ int main(int, char**)
             ImGui::SliderFloat("Speed", &speed, -3.0f, 3.0f, "%.1f");
             precisionChanged = ImGui::SliderInt("Precision", &precision, 2, 20);
 
-            ImGui::Checkbox("Wireframe Mode", &polygonMode);
-            ImGui::Checkbox("VSync", &vsyncMode);
+            polygonChanged = ImGui::Checkbox("Wireframe Mode", &polygonMode);
+            vsyncChanged = ImGui::Checkbox("VSync", &vsyncMode);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
         }
 
-        if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if (polygonChanged) {
+            if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
 
-        if (vsyncMode) glfwSwapInterval(1);
-        else glfwSwapInterval(0);
+        if (vsyncChanged) {
+            if (vsyncMode) glfwSwapInterval(1);
+            else glfwSwapInterval(0);
+        }
 
         if (precisionChanged) {
             for (auto &cone : cones) {
