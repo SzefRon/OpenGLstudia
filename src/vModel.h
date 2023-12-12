@@ -14,9 +14,7 @@
 
 class vModel : public GraphNode
 {
-private:
-    std::vector<vMesh> meshes;
-    std::vector<Texture> textures_loaded;
+protected:
     std::string directory;
     float size;
 
@@ -26,7 +24,9 @@ private:
     std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
     unsigned int textureFromFile(const char *path, const std::string &directory, bool gamma);
 public:
+    std::vector<vMesh> meshes;
+    std::vector<Texture> textures_loaded;
     vModel(const char *path, float size);
-    void draw(Shader &shader) override;
+    virtual void draw(Shader &shader) override;
     void updateSelfChildren(float deltaTime) override;
 };
