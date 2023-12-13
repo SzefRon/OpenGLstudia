@@ -1,25 +1,10 @@
 #include "Instancer.h"
 
-void Instancer::drawInstances(vModel *model, int amount, Shader &shader)
+Instancer::Instancer(vModel *model, glm::mat4 *modelMatrices, unsigned int noInstances)
+    : model(model), noInstances(noInstances)
 {
-    int val = 0;
-    shader.setInt("texture_diffuse1", val);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, model->textures_loaded[0].id);
-
-    std::vector<vMesh> meshes = model->meshes;
-    for (auto mesh : meshes) {
-        glBindVertexArray(mesh.VAO);
-        glDrawElementsInstanced(GL_TRIANGLES, (mesh.indices.size()), GL_UNSIGNED_INT, 0, amount);
-        glBindVertexArray(0);
-    }
-}
-
-void Instancer::createInstances(vModel *model, glm::mat4 *modelMatrices, unsigned int noInstances)
-{
-    unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glGenBuffers(1, &bufferID);
+    glBindBuffer(GL_ARRAY_BUFFER, bufferID);
     glBufferData(GL_ARRAY_BUFFER, noInstances * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
 
     std::vector<vMesh> meshes = model->meshes;
@@ -42,6 +27,31 @@ void Instancer::createInstances(vModel *model, glm::mat4 *modelMatrices, unsigne
         glVertexAttribDivisor(5, 1);
         glVertexAttribDivisor(6, 1);
 
+        glBindVertexArray(0);
+    }
+}
+
+void Instancer::updateInstances(glm::mat4 *modelMatrices)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, bufferID);
+    glm::mat4* mappedBuffer = (glm::mat4*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    for (int i = 0; i < noInstances; i++) {
+        mappedBuffer[i] = modelMatrices[i];
+    }
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+}
+
+void Instancer::drawInstances(Shader &shader)
+{
+    int val = 0;
+    shader.setInt("texture_diffuse1", val);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, model->textures_loaded[0].id);
+
+    std::vector<vMesh> meshes = model->meshes;
+    for (auto mesh : meshes) {
+        glBindVertexArray(mesh.VAO);
+        glDrawElementsInstanced(GL_TRIANGLES, (mesh.indices.size()), GL_UNSIGNED_INT, 0, noInstances);
         glBindVertexArray(0);
     }
 }

@@ -10,6 +10,7 @@
 #include "vModel.h"
 #include "Orbit.h"
 #include "Instancer.h"
+#include "InstanceNode.h"
 #include "Camera.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -81,8 +82,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         if (key == GLFW_KEY_RIGHT_SHIFT) {
             if (editMode)
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            else
+            else {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                firstMouse = true;
+            }
             editMode ^= true;
         }
     }
@@ -197,40 +200,42 @@ int main(int, char**)
 
     // Loop variables
 
-    ImVec4 color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    float rotateX = 0.0f, rotateY = 3.14159265f * 0.5f, zoom = -30.0f, speed = 1.0f;
-    bool polygonMode = false, polygonChanged = false, vsyncMode = true, vsyncChanged = false;
+    float speed = 1.0f;
+    int indexDomy = 0, indexDachy = 0;
+    bool polygonMode = false, vsyncMode = true;
     double lastFrame = 0.0, currFrame = 0.0f;
+    vModel *model;
 
     std::vector<GraphNode *> textureModels;
     std::vector<Cone *> cones;
 
     // Scene preparation
 
-    GraphNode *sunNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
-        // Sun
-        GraphNode *sunRotationNode = new GraphNode(0.0f, 1.0f, 0.0f, 0.0f);
-        sunNode->addChild(sunRotationNode);
-            vModel *model = new vModel("..\\res\\models\\sun\\sun.obj", 1.5f);
-            textureModels.push_back(model);
-            sunRotationNode->addChild(model); 
-
-    const int noInstances = 40000;
+    const int noInstances = 1000000;
     const int noInstancesSqrd = (int)std::ceilf(std::sqrtf((float)noInstances));
     int it = 0;
-    glm::mat4 *modelMatrices = new glm::mat4[noInstances];
+    glm::mat4 *breadorusMatrices = new glm::mat4[noInstances];
+    glm::mat4 *sunMatrices = new glm::mat4[noInstances];
     for (int i = 0; i < noInstancesSqrd; i++) {
         for (int j = 0; j < noInstancesSqrd; j++) {
             if (it >= noInstances) break;
-            modelMatrices[it] = glm::mat4(1);
-            modelMatrices[it] = glm::translate(modelMatrices[it], glm::vec3(i * 2.0f, 0.0f, j * 2.0f));
+            breadorusMatrices[it] = glm::mat4(1);
+            breadorusMatrices[it] = glm::translate(breadorusMatrices[it], glm::vec3(i * 3.0f, 0.0f, j * 3.0f));
+            sunMatrices[it] = glm::mat4(1);
+            sunMatrices[it] = glm::translate(sunMatrices[it], glm::vec3(0.0f, 2.0f, 0.0f));
             it++;
         }
     }
 
-    Instancer::createInstances(model, modelMatrices, noInstances);
+    GraphNode *mainNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
+        model = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
+        InstanceNode *domyNode = new InstanceNode(model, breadorusMatrices, noInstances);
+        mainNode->addChild(domyNode);
+            model = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
+            InstanceNode *dachyNode = new InstanceNode(model, sunMatrices, noInstances);
+            domyNode->addChild(dachyNode);
 
-    delete[] modelMatrices;
+    mainNode->updateSelfChildren(deltaTime);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -251,28 +256,63 @@ int main(int, char**)
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
-            ImGui::Begin("Hello, motherfuckers!");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("Hello darkness my old friend!");
 
-            ImGui::SliderFloat("Zoom", &zoom, -30.0f, 0.0f);
-            ImGui::SliderAngle("Rotate X", &rotateX, -180.0f, 180.0f);
-            ImGui::SliderAngle("Rotate Y", &rotateY, -180.0f, 180.0f);
-            ImGui::SliderFloat("Speed", &speed, -3.0f, 3.0f, "%.1f");
+            if (ImGui::CollapsingHeader("Domki")) {
+                if (ImGui::InputInt("Index", &indexDomy)) {
+                    if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
+                    if (indexDomy < 0) indexDomy = 0;
+                }
+                glm::mat4 &dom = domyNode->modelMatrices[indexDomy];
+                glm::vec3 relPos(dom[3]);
+                if (ImGui::InputFloat("PosX", &relPos.x)) {
+                    dom[3].x = relPos.x;
+                    domyNode->updateSelfChildren(deltaTime);
+                }
+                if (ImGui::InputFloat("PosY", &relPos.y)) {
+                    dom[3].y = relPos.y;
+                    domyNode->updateSelfChildren(deltaTime);
+                }
+                if (ImGui::InputFloat("PosZ", &relPos.z)) {
+                    dom[3].z = relPos.z;
+                    domyNode->updateSelfChildren(deltaTime);
+                }
+            }
 
-            polygonChanged = ImGui::Checkbox("Wireframe Mode", &polygonMode);
-            vsyncChanged = ImGui::Checkbox("VSync", &vsyncMode);
+            if (ImGui::CollapsingHeader("Dachy")) {
+                if (ImGui::InputInt("Index", &indexDachy)) {
+                    if (indexDachy > noInstances - 1) indexDachy = noInstances - 1;
+                    if (indexDachy < 0) indexDachy = 0;
+                }
+                glm::mat4 &dach = dachyNode->modelMatrices[indexDachy];
+                glm::vec3 relPos(dach[3]);
+                if (ImGui::InputFloat("PosX", &relPos.x)) {
+                    dach[3].x = relPos.x;
+                    dachyNode->updateSelfChildren(deltaTime);
+                }
+                if (ImGui::InputFloat("PosY", &relPos.y)) {
+                    dach[3].y = relPos.y;
+                    dachyNode->updateSelfChildren(deltaTime);
+                }
+                if (ImGui::InputFloat("PosZ", &relPos.z)) {
+                    dach[3].z = relPos.z;
+                    dachyNode->updateSelfChildren(deltaTime);
+                }
+            }
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            if (ImGui::CollapsingHeader("Config")) {
+                if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
+                    if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                    else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                }
+                if (ImGui::Checkbox("VSync", &vsyncMode)) {
+                    if (vsyncMode) glfwSwapInterval(1);
+                    else glfwSwapInterval(0);
+                }
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            }
+
             ImGui::End();
-        }
-
-        if (polygonChanged) {
-            if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
-        if (vsyncChanged) {
-            if (vsyncMode) glfwSwapInterval(1);
-            else glfwSwapInterval(0);
         }
 
         // Rendering
@@ -292,20 +332,17 @@ int main(int, char**)
         glClearColor(0.5f, 0.5f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::vec4 vec = glm::vec4(color.x, color.y, color.z, color.w);
-
         glm::mat4 view = camera.GetViewMatrix();
 
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(45.0f), (float)(display_w) / display_h, 0.1f, 10000.0f);
 
-        sunNode->updateSelfChildren(deltaTime);
-
         instanceShader.use();
         instanceShader.setUniformMat4("view", view);
         instanceShader.setUniformMat4("projection", projection);
 
-        Instancer::drawInstances(model, noInstances, instanceShader);
+        domyNode->draw(instanceShader);
+        dachyNode->draw(instanceShader);
         
         // glBindVertexArray(0); // no need to unbind it every time 
  

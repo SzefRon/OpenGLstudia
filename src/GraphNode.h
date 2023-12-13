@@ -20,7 +20,7 @@ public:
     GraphNode(float distance, float speed, float offset, float pitch);
     ~GraphNode() = default;
 
-    void addChild(GraphNode *object);
+    virtual void addChild(GraphNode *object);
     virtual void updateSelfChildren(float deltaTime);
     virtual void draw(Shader &shader) {}
     

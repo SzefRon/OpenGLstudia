@@ -8,7 +8,12 @@
 
 class Instancer
 {
+private:
+    unsigned int bufferID;
+    unsigned int noInstances;
+    vModel *model;
 public:
-    static void createInstances(vModel *model, glm::mat4 *modelMatrices, unsigned int noInstances);
-    static void drawInstances(vModel *model, int amount, Shader &shader);
+    Instancer(vModel *model, glm::mat4 *modelMatrices, unsigned int noInstances);
+    void updateInstances(glm::mat4 *modelMatrices);
+    void drawInstances(Shader &shader);
 };
