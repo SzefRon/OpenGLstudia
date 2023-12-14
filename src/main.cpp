@@ -222,7 +222,7 @@ int main(int, char**)
             breadorusMatrices[it] = glm::mat4(1);
             breadorusMatrices[it] = glm::translate(breadorusMatrices[it], glm::vec3(i * 3.0f, 0.0f, j * 3.0f));
             sunMatrices[it] = glm::mat4(1);
-            sunMatrices[it] = glm::translate(sunMatrices[it], glm::vec3(0.0f, 2.0f, 0.0f));
+            sunMatrices[it] = glm::translate(sunMatrices[it], glm::vec3(i * 3.0f, 2.0f, j * 3.0f));
             it++;
         }
     }
@@ -259,58 +259,58 @@ int main(int, char**)
             ImGui::Begin("Hello darkness my old friend!");
 
             if (ImGui::CollapsingHeader("Domki")) {
-                if (ImGui::InputInt("Index", &indexDomy)) {
+                if (ImGui::InputInt("Domki Index", &indexDomy)) {
                     if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
                     if (indexDomy < 0) indexDomy = 0;
                 }
                 glm::mat4 &dom = domyNode->modelMatrices[indexDomy];
                 glm::vec3 relPos(dom[3]);
-                if (ImGui::InputFloat("PosX", &relPos.x)) {
+                if (ImGui::InputFloat("Domki Pos X", &relPos.x)) {
                     dom[3].x = relPos.x;
-                    domyNode->updateSelfChildren(deltaTime);
+                    domyNode->dirtyIndexes.push_back(indexDomy);
                 }
-                if (ImGui::InputFloat("PosY", &relPos.y)) {
+                if (ImGui::InputFloat("Domki Pos Y", &relPos.y)) {
                     dom[3].y = relPos.y;
-                    domyNode->updateSelfChildren(deltaTime);
+                    domyNode->dirtyIndexes.push_back(indexDomy);
                 }
-                if (ImGui::InputFloat("PosZ", &relPos.z)) {
+                if (ImGui::InputFloat("Domki Pos Z", &relPos.z)) {
                     dom[3].z = relPos.z;
-                    domyNode->updateSelfChildren(deltaTime);
+                    domyNode->dirtyIndexes.push_back(indexDomy);
                 }
             }
 
             if (ImGui::CollapsingHeader("Dachy")) {
-                if (ImGui::InputInt("Index", &indexDachy)) {
+                if (ImGui::InputInt("Dachy Index", &indexDachy)) {
                     if (indexDachy > noInstances - 1) indexDachy = noInstances - 1;
                     if (indexDachy < 0) indexDachy = 0;
                 }
                 glm::mat4 &dach = dachyNode->modelMatrices[indexDachy];
                 glm::vec3 relPos(dach[3]);
-                if (ImGui::InputFloat("PosX", &relPos.x)) {
+                if (ImGui::InputFloat("Dachy Pos X", &relPos.x)) {
                     dach[3].x = relPos.x;
-                    dachyNode->updateSelfChildren(deltaTime);
+                    dachyNode->dirtyIndexes.push_back(indexDachy);
                 }
-                if (ImGui::InputFloat("PosY", &relPos.y)) {
+                if (ImGui::InputFloat("Dachy Pos Y", &relPos.y)) {
                     dach[3].y = relPos.y;
-                    dachyNode->updateSelfChildren(deltaTime);
+                    dachyNode->dirtyIndexes.push_back(indexDachy);
                 }
-                if (ImGui::InputFloat("PosZ", &relPos.z)) {
+                if (ImGui::InputFloat("Dachy Pos Z", &relPos.z)) {
                     dach[3].z = relPos.z;
-                    dachyNode->updateSelfChildren(deltaTime);
+                    dachyNode->dirtyIndexes.push_back(indexDachy);
                 }
             }
 
-            if (ImGui::CollapsingHeader("Config")) {
-                if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
-                    if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                }
-                if (ImGui::Checkbox("VSync", &vsyncMode)) {
-                    if (vsyncMode) glfwSwapInterval(1);
-                    else glfwSwapInterval(0);
-                }
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::Separator();
+
+            if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
+                if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
+            if (ImGui::Checkbox("VSync", &vsyncMode)) {
+                if (vsyncMode) glfwSwapInterval(1);
+                else glfwSwapInterval(0);
+            }
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
             ImGui::End();
         }
@@ -320,6 +320,8 @@ int main(int, char**)
         currFrame = glfwGetTime();
         deltaTime = speed * (currFrame - lastFrame);
         lastFrame = currFrame;
+
+        mainNode->updateSelfChildren(deltaTime);
 
         if (!editMode)
             processInput(window);

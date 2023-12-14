@@ -15,6 +15,7 @@ private:
     vModel *model;
 public:
     glm::mat4 *modelMatrices;
+    std::deque<int> dirtyIndexes;
     InstanceNode(vModel *model, glm::mat4 *modelMatrices, int noInstances);
     void addChild(GraphNode *object);
     void updateSelfChildren(float deltaTime);

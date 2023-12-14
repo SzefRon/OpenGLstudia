@@ -16,17 +16,17 @@ void InstanceNode::addChild(GraphNode *object)
 void InstanceNode::updateSelfChildren(float deltaTime)
 {
     InstanceNode *instanceParent = dynamic_cast<InstanceNode *>(parent);
-    if (instanceParent) {
-        glm::mat4 *updatedMatrices;
-        glm::mat4 *parentMatrices = instanceParent->modelMatrices;
-        updatedMatrices = new glm::mat4[noInstances];
-        for (int i = 0; i < noInstances; i++) {
-            updatedMatrices[i] = parentMatrices[i] * modelMatrices[i];
+    if (!dirtyIndexes.empty()) {
+        if (instanceParent) {
+            glm::mat4 *parentMatrices = instanceParent->modelMatrices;
+            for (auto &index : dirtyIndexes) {
+                modelMatrices[index] = parentMatrices[index] * modelMatrices[index];
+            }
+            instancer->updateInstances(modelMatrices);
+        } else {
+            instancer->updateInstances(modelMatrices);
         }
-        instancer->updateInstances(updatedMatrices);
-        delete[] updatedMatrices;
-    } else {
-        instancer->updateInstances(modelMatrices);
+        dirtyIndexes.clear();
     }
 
     for (auto &object : objects) {
