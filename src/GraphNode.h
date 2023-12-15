@@ -8,20 +8,30 @@
 
 class GraphNode
 {
-private:
-    std::deque<GraphNode *> objects;
-
-    float distance, speed, offset, pitch;
-    float rotation = 0.0f;
 protected:
-    GraphNode *parent = nullptr;
+    std::deque<GraphNode *> children;
+    std::deque<GraphNode *> dirtyChildren;
+    bool isDirty = false;
 public:
-    GraphNode() = default;
-    GraphNode(float distance, float speed, float offset, float pitch);
+    glm::vec3 translation = glm::vec3(0);
+    glm::vec3 rotation = glm::vec3(0);
+    glm::vec3 scale = glm::vec3(1);
+    GraphNode *parent = nullptr;
+
+    GraphNode();
     ~GraphNode() = default;
 
     virtual void addChild(GraphNode *object);
     virtual void updateSelfChildren(float deltaTime);
+
+    void makeDirty();
+    void updateParentNodes();
+    void makeChildrenDirty();
+
+    void setTranslation(glm::vec3 translation);
+    void setRotation(glm::vec3 rotation);
+    void setScale(glm::vec3 scale);
+
     virtual void draw(Shader &shader) {}
     
     glm::mat4 model;

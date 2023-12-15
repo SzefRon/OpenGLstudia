@@ -1,8 +1,9 @@
 #include "Instancer.h"
 
-Instancer::Instancer(vModel *model, glm::mat4 *modelMatrices, unsigned int noInstances)
-    : model(model), noInstances(noInstances)
+Instancer::Instancer(vModel *model, unsigned int noInstances, glm::mat4 *modelMatrices)
+    : model(model), noInstances(noInstances), modelMatrices(modelMatrices)
 {
+    this->modelMatrices = modelMatrices;
     glGenBuffers(1, &bufferID);
     glBindBuffer(GL_ARRAY_BUFFER, bufferID);
     glBufferData(GL_ARRAY_BUFFER, noInstances * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
@@ -29,12 +30,22 @@ Instancer::Instancer(vModel *model, glm::mat4 *modelMatrices, unsigned int noIns
 
         glBindVertexArray(0);
     }
+
+    updateInstances();
 }
 
-void Instancer::updateInstances(glm::mat4 *modelMatrices)
+void Instancer::updateInstance(glm::mat4 modelMatrix, unsigned int index)
 {
     glBindBuffer(GL_ARRAY_BUFFER, bufferID);
-    glm::mat4* mappedBuffer = (glm::mat4*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    glm::mat4 *mappedBuffer = (glm::mat4 *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+    mappedBuffer[index] = modelMatrix;
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+}
+
+void Instancer::updateInstances()
+{
+    glBindBuffer(GL_ARRAY_BUFFER, bufferID);
+    glm::mat4 *mappedBuffer = (glm::mat4 *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
     for (int i = 0; i < noInstances; i++) {
         mappedBuffer[i] = modelMatrices[i];
     }

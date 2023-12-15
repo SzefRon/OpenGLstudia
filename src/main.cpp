@@ -88,14 +88,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             }
             editMode ^= true;
         }
+        if (key == GLFW_KEY_ESCAPE)
+            glfwSetWindowShouldClose(window, true);
     }
 }
 
 void processInput(GLFWwindow *window)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         camera.MovementSpeed += 5.0f * deltaTime;
     else
@@ -214,26 +213,42 @@ int main(int, char**)
     const int noInstances = 1000000;
     const int noInstancesSqrd = (int)std::ceilf(std::sqrtf((float)noInstances));
     int it = 0;
-    glm::mat4 *breadorusMatrices = new glm::mat4[noInstances];
-    glm::mat4 *sunMatrices = new glm::mat4[noInstances];
+    glm::mat4 *houseMatrices = new glm::mat4[noInstances];
+    glm::mat4 *roofMatrices = new glm::mat4[noInstances];
+    glm::mat4 *updatedRoofMatrices = new glm::mat4[noInstances];
     for (int i = 0; i < noInstancesSqrd; i++) {
         for (int j = 0; j < noInstancesSqrd; j++) {
             if (it >= noInstances) break;
-            breadorusMatrices[it] = glm::mat4(1);
-            breadorusMatrices[it] = glm::translate(breadorusMatrices[it], glm::vec3(i * 3.0f, 0.0f, j * 3.0f));
-            sunMatrices[it] = glm::mat4(1);
-            sunMatrices[it] = glm::translate(sunMatrices[it], glm::vec3(i * 3.0f, 2.0f, j * 3.0f));
+            houseMatrices[it] = glm::mat4(1);
+            houseMatrices[it] = glm::translate(houseMatrices[it], glm::vec3(i * 3.0f, 0.0f, j * 3.0f));
+            roofMatrices[it] = glm::mat4(1);
+            roofMatrices[it] = glm::translate(roofMatrices[it], glm::vec3(0.0f, 2.0f, 0.0f));
+            updatedRoofMatrices[it] = roofMatrices[it] * houseMatrices[it];
             it++;
         }
     }
 
-    GraphNode *mainNode = new GraphNode(0.0f, 0.0f, 0.0f, 0.0f);
-        model = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
-        InstanceNode *domyNode = new InstanceNode(model, breadorusMatrices, noInstances);
-        mainNode->addChild(domyNode);
-            model = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
-            InstanceNode *dachyNode = new InstanceNode(model, sunMatrices, noInstances);
-            domyNode->addChild(dachyNode);
+    std::deque<InstanceNode *> houseNodes;
+    std::deque<InstanceNode *> roofNodes;
+
+    GraphNode *mainNode = new GraphNode();
+        GraphNode *housesNode = new GraphNode();
+        mainNode->addChild(housesNode);
+            vModel *houseModel = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
+            vModel *roofModel = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
+            Instancer *housesInstancer = new Instancer(houseModel, noInstances, houseMatrices);
+            Instancer *roofsInstancer = new Instancer(roofModel, noInstances, updatedRoofMatrices);
+            for (int i = 0; i < noInstances; i++) {
+                InstanceNode *houseNode = new InstanceNode(houseMatrices[i], i, housesInstancer);
+                houseNode->translation = houseMatrices[i][3];
+                houseNodes.push_back(houseNode);
+                housesNode->addChild(houseNode);
+                    InstanceNode *roofNode = new InstanceNode(roofMatrices[i], i, roofsInstancer);
+                    roofNode->translation = roofMatrices[i][3];
+                    roofNodes.push_back(roofNode);
+                    houseNode->addChild(roofNode);
+                    //roofNode->makeDirty();
+            }
 
     mainNode->updateSelfChildren(deltaTime);
 
@@ -259,45 +274,93 @@ int main(int, char**)
             ImGui::Begin("Hello darkness my old friend!");
 
             if (ImGui::CollapsingHeader("Domki")) {
+                ImGui::Indent(20.0f);
                 if (ImGui::InputInt("Domki Index", &indexDomy)) {
                     if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
                     if (indexDomy < 0) indexDomy = 0;
                 }
-                glm::mat4 &dom = domyNode->modelMatrices[indexDomy];
-                glm::vec3 relPos(dom[3]);
-                if (ImGui::InputFloat("Domki Pos X", &relPos.x)) {
-                    dom[3].x = relPos.x;
-                    domyNode->dirtyIndexes.push_back(indexDomy);
+                if (ImGui::CollapsingHeader("Domki Translation")) {
+                    glm::vec3 &translation = houseNodes.at(indexDomy)->translation;
+                    if (ImGui::InputFloat("Domki Pos X", &translation.x)) {
+                        houseNodes.at(indexDomy)->setTranslation(translation);
+                    }
+                    if (ImGui::InputFloat("Domki Pos Y", &translation.y)) {
+                        houseNodes.at(indexDomy)->setTranslation(translation);
+                    }
+                    if (ImGui::InputFloat("Domki Pos Z", &translation.z)) {
+                        houseNodes.at(indexDomy)->setTranslation(translation);
+                    }
                 }
-                if (ImGui::InputFloat("Domki Pos Y", &relPos.y)) {
-                    dom[3].y = relPos.y;
-                    domyNode->dirtyIndexes.push_back(indexDomy);
+                if (ImGui::CollapsingHeader("Domki Rotation")) {
+                    glm::vec3 &rotation = houseNodes.at(indexDomy)->rotation;
+                    if (ImGui::InputFloat("Domki Rot X", &rotation.x)) {
+                        houseNodes.at(indexDomy)->setRotation(rotation);
+                    }
+                    if (ImGui::InputFloat("Domki Rot Y", &rotation.y)) {
+                        houseNodes.at(indexDomy)->setRotation(rotation);
+                    }
+                    if (ImGui::InputFloat("Domki Rot Z", &rotation.z)) {
+                        houseNodes.at(indexDomy)->setRotation(rotation);
+                    }
                 }
-                if (ImGui::InputFloat("Domki Pos Z", &relPos.z)) {
-                    dom[3].z = relPos.z;
-                    domyNode->dirtyIndexes.push_back(indexDomy);
+                if (ImGui::CollapsingHeader("Domki Scale")) {
+                    glm::vec3 &scale = houseNodes.at(indexDomy)->scale;
+                    if (ImGui::InputFloat("Domki Scale X", &scale.x)) {
+                        houseNodes.at(indexDomy)->setScale(scale);
+                    }
+                    if (ImGui::InputFloat("Domki Scale Y", &scale.y)) {
+                        houseNodes.at(indexDomy)->setScale(scale);
+                    }
+                    if (ImGui::InputFloat("Domki Scale Z", &scale.z)) {
+                        houseNodes.at(indexDomy)->setScale(scale);
+                    }
                 }
+                ImGui::Indent(-20.0f);
             }
 
             if (ImGui::CollapsingHeader("Dachy")) {
+                ImGui::Indent(20.0f);
                 if (ImGui::InputInt("Dachy Index", &indexDachy)) {
                     if (indexDachy > noInstances - 1) indexDachy = noInstances - 1;
                     if (indexDachy < 0) indexDachy = 0;
                 }
-                glm::mat4 &dach = dachyNode->modelMatrices[indexDachy];
-                glm::vec3 relPos(dach[3]);
-                if (ImGui::InputFloat("Dachy Pos X", &relPos.x)) {
-                    dach[3].x = relPos.x;
-                    dachyNode->dirtyIndexes.push_back(indexDachy);
+                if (ImGui::CollapsingHeader("Dachy Translation")) {
+                    glm::vec3 &translation = roofNodes.at(indexDachy)->translation;
+                    if (ImGui::InputFloat("Dachy Pos X", &translation.x)) {
+                        roofNodes.at(indexDachy)->setTranslation(translation);
+                    }
+                    if (ImGui::InputFloat("Dachy Pos Y", &translation.y)) {
+                        roofNodes.at(indexDachy)->setTranslation(translation);
+                    }
+                    if (ImGui::InputFloat("Dachy Pos Z", &translation.z)) {
+                        roofNodes.at(indexDachy)->setTranslation(translation);
+                    }
                 }
-                if (ImGui::InputFloat("Dachy Pos Y", &relPos.y)) {
-                    dach[3].y = relPos.y;
-                    dachyNode->dirtyIndexes.push_back(indexDachy);
+                if (ImGui::CollapsingHeader("Dachy Rotation")) {
+                    glm::vec3 &rotation = roofNodes.at(indexDachy)->rotation;
+                    if (ImGui::InputFloat("Dachy Rot X", &rotation.x)) {
+                        roofNodes.at(indexDachy)->setRotation(rotation);
+                    }
+                    if (ImGui::InputFloat("Dachy Rot Y", &rotation.y)) {
+                        roofNodes.at(indexDachy)->setRotation(rotation);
+                    }
+                    if (ImGui::InputFloat("Dachy Rot Z", &rotation.z)) {
+                        roofNodes.at(indexDachy)->setRotation(rotation);
+                    }
                 }
-                if (ImGui::InputFloat("Dachy Pos Z", &relPos.z)) {
-                    dach[3].z = relPos.z;
-                    dachyNode->dirtyIndexes.push_back(indexDachy);
+                if (ImGui::CollapsingHeader("Dachy Scale")) {
+                    glm::vec3 &scale = roofNodes.at(indexDachy)->scale;
+                    if (ImGui::InputFloat("Dachy Scale X", &scale.x)) {
+                        roofNodes.at(indexDachy)->setScale(scale);
+                    }
+                    if (ImGui::InputFloat("Dachy Scale Y", &scale.y)) {
+                        roofNodes.at(indexDachy)->setScale(scale);
+                    }
+                    if (ImGui::InputFloat("Dachy Scale Z", &scale.z)) {
+                        roofNodes.at(indexDachy)->setScale(scale);
+                    }
                 }
+                ImGui::Indent(-20.0f);
             }
 
             ImGui::Separator();
@@ -343,8 +406,8 @@ int main(int, char**)
         instanceShader.setUniformMat4("view", view);
         instanceShader.setUniformMat4("projection", projection);
 
-        domyNode->draw(instanceShader);
-        dachyNode->draw(instanceShader);
+        housesInstancer->drawInstances(instanceShader);
+        roofsInstancer->drawInstances(instanceShader);
         
         // glBindVertexArray(0); // no need to unbind it every time 
  

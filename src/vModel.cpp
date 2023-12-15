@@ -160,4 +160,7 @@ void vModel::updateSelfChildren(float deltaTime)
 {
     model = parent->model;
     model = glm::scale(model, glm::vec3(size));
+    for (auto &child : children) {
+        child->updateSelfChildren(deltaTime);
+    }
 }

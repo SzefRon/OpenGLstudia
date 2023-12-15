@@ -10,14 +10,10 @@ class InstanceNode : public GraphNode
 {
 private:
     Instancer *instancer;
-    int noInstances;
-    std::deque<InstanceNode *> objects;
-    vModel *model;
+    unsigned int index;
 public:
-    glm::mat4 *modelMatrices;
-    std::deque<int> dirtyIndexes;
-    InstanceNode(vModel *model, glm::mat4 *modelMatrices, int noInstances);
+    InstanceNode(glm::mat4 model, unsigned int index, Instancer *instancer);
     void addChild(GraphNode *object);
     void updateSelfChildren(float deltaTime);
-    void draw(Shader &shader);
+    void draw(Shader &shader) {}
 };

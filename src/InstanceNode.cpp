@@ -1,40 +1,33 @@
 #include "InstanceNode.h"
 
-InstanceNode::InstanceNode(vModel *model, glm::mat4 *modelMatrices, int noInstances)
-    : noInstances(noInstances), modelMatrices(modelMatrices), model(model)
+InstanceNode::InstanceNode(glm::mat4 model, unsigned int index, Instancer *instancer)
+    : index(index), instancer(instancer)
 {
-    instancer = new Instancer(model, modelMatrices, noInstances);
+    this->model = model;
 }
 
-void InstanceNode::addChild(GraphNode *object)
+void InstanceNode::addChild(GraphNode *child)
 {
-    InstanceNode *instanceNode = dynamic_cast<InstanceNode *>(object);
-    objects.push_back(instanceNode);
-    instanceNode->parent = this;
+    children.push_back(child);
+    child->parent = this;
 }
 
 void InstanceNode::updateSelfChildren(float deltaTime)
 {
-    InstanceNode *instanceParent = dynamic_cast<InstanceNode *>(parent);
-    if (!dirtyIndexes.empty()) {
-        if (instanceParent) {
-            glm::mat4 *parentMatrices = instanceParent->modelMatrices;
-            for (auto &index : dirtyIndexes) {
-                modelMatrices[index] = parentMatrices[index] * modelMatrices[index];
-            }
-            instancer->updateInstances(modelMatrices);
-        } else {
-            instancer->updateInstances(modelMatrices);
-        }
-        dirtyIndexes.clear();
-    }
+    model = parent->model;
+    
+    model = glm::translate(model, translation);
 
-    for (auto &object : objects) {
-        object->updateSelfChildren(deltaTime);
-    }
-}
+    model = glm::rotate(model, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-void InstanceNode::draw(Shader &shader)
-{
-    instancer->drawInstances(shader);
+    model = glm::scale(model, scale);
+
+    instancer->updateInstance(model, index);
+    isDirty = false;
+    for (auto &dirtyChild : dirtyChildren) {
+        dirtyChild->updateSelfChildren(deltaTime);
+    }
+    dirtyChildren.clear();
 }

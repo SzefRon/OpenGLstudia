@@ -13,7 +13,10 @@ private:
     unsigned int noInstances;
     vModel *model;
 public:
-    Instancer(vModel *model, glm::mat4 *modelMatrices, unsigned int noInstances);
-    void updateInstances(glm::mat4 *modelMatrices);
+    glm::mat4 *modelMatrices;
+
+    Instancer(vModel *model, unsigned int noInstances, glm::mat4 *modelMatrices);
+    void updateInstance(glm::mat4 modelMatrix, unsigned int index);
+    void updateInstances();
     void drawInstances(Shader &shader);
 };

@@ -1,14 +1,13 @@
 #include "GraphNode.h"
 
-GraphNode::GraphNode(float distance, float speed, float offset, float pitch)
-    : distance(distance), speed(speed), offset(offset), pitch(pitch)
+GraphNode::GraphNode()
 {
     model = glm::mat4(1);
 }
 
 void GraphNode::addChild(GraphNode *object)
 {
-    objects.push_back(object);
+    children.push_back(object);
     object->parent = this;
 }
 
@@ -19,13 +18,62 @@ void GraphNode::updateSelfChildren(float deltaTime)
     } else {
         model = glm::mat4(1);
     }
-    rotation += speed * deltaTime;
-    model = glm::rotate(model, pitch, glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::rotate(model, offset, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, rotation, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::translate(model, glm::vec3(distance, 0.0f, 0.0f));
 
-    for (auto &object : objects) {
-        object->updateSelfChildren(deltaTime);
+    model = glm::translate(model, translation);
+
+    model = glm::rotate(model, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    model = glm::scale(model, scale);
+
+    isDirty = false;
+
+    for (auto &dirtyChild : dirtyChildren) {
+        dirtyChild->updateSelfChildren(deltaTime);
     }
+    dirtyChildren.clear();
+}
+
+void GraphNode::makeDirty()
+{
+    updateParentNodes();
+    makeChildrenDirty();
+}
+
+void GraphNode::updateParentNodes()
+{
+    isDirty = true;
+    if (parent) {
+        parent->dirtyChildren.push_back(this);
+        if (!(parent->isDirty))
+            parent->updateParentNodes();
+    }
+}
+
+void GraphNode::makeChildrenDirty()
+{
+    for (auto &child : children) {
+        isDirty = true;
+        dirtyChildren.push_back(child);
+        child->makeChildrenDirty();
+    }
+}
+
+void GraphNode::setTranslation(glm::vec3 translation)
+{
+    this->translation = translation;
+    makeDirty();
+}
+
+void GraphNode::setRotation(glm::vec3 rotation)
+{
+    this->rotation = rotation;
+    makeDirty();
+}
+
+void GraphNode::setScale(glm::vec3 scale)
+{
+    this->scale = scale;
+    makeDirty();
 }
