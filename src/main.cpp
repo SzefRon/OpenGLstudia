@@ -160,7 +160,7 @@ int main(int, char**)
     spdlog::info("Successfully initialized OpenGL loader!");
 
     Shader textureShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\texture.frag");
-    Shader instanceShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\texture.frag");
+    Shader instanceShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\instances.frag");
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -210,7 +210,7 @@ int main(int, char**)
 
     // Scene preparation
 
-    const int noInstances = 1000000;
+    const int noInstances = 40000;
     const int noInstancesSqrd = (int)std::ceilf(std::sqrtf((float)noInstances));
     int it = 0;
     glm::mat4 *houseMatrices = new glm::mat4[noInstances];
@@ -249,6 +249,10 @@ int main(int, char**)
                     houseNode->addChild(roofNode);
                     //roofNode->makeDirty();
             }
+        vModel *grassFloor = new vModel("..\\res\\models\\grass-floor\\grass-floor.obj", 1.0f);
+        mainNode->addChild(grassFloor); 
+        grassFloor->setScale(glm::vec3(noInstancesSqrd * 1.5f + 4.0f));
+        grassFloor->setTranslation(glm::vec3(noInstancesSqrd * 1.5f + 2.0f, -1.0f, noInstancesSqrd * 1.5f + 2.0f));
 
     mainNode->updateSelfChildren(deltaTime);
 
@@ -269,7 +273,7 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-        {
+        if (editMode) {
             ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
             ImGui::Begin("Hello darkness my old friend!");
 
@@ -402,13 +406,19 @@ int main(int, char**)
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(45.0f), (float)(display_w) / display_h, 0.1f, 10000.0f);
 
+        textureShader.use();
+        textureShader.setUniformMat4("view", view);
+        textureShader.setUniformMat4("projection", projection);
+
+        grassFloor->draw(textureShader);
+
         instanceShader.use();
         instanceShader.setUniformMat4("view", view);
         instanceShader.setUniformMat4("projection", projection);
+        instanceShader.setUniform3fv("viewPos", camera.Position); 
 
         housesInstancer->drawInstances(instanceShader);
         roofsInstancer->drawInstances(instanceShader);
-        
         // glBindVertexArray(0); // no need to unbind it every time 
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)

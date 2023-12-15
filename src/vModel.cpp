@@ -83,6 +83,7 @@ std::vector<Texture> vModel::loadMaterialTextures(aiMaterial *mat, aiTextureType
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
         aiString str;
         mat->GetTexture(type, i, &str);
+        std::cout << str.C_Str() << '\n';
         bool skip = false;
         for (unsigned int j = 0; j < textures_loaded.size(); j++) {
             if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0) {
@@ -92,7 +93,6 @@ std::vector<Texture> vModel::loadMaterialTextures(aiMaterial *mat, aiTextureType
             }
         }
         if (!skip) {   // if texture hasn't been loaded already, load it
-            std::cout << directory << ' ';
             Texture texture;
             texture.id = textureFromFile(str.C_Str(), directory, false);
             texture.type = typeName;
@@ -158,9 +158,24 @@ void vModel::draw(Shader &shader)
 
 void vModel::updateSelfChildren(float deltaTime)
 {
-    model = parent->model;
-    model = glm::scale(model, glm::vec3(size));
-    for (auto &child : children) {
-        child->updateSelfChildren(deltaTime);
+    if (parent) {
+        model = parent->model;
+    } else {
+        model = glm::mat4(1);
     }
+
+    model = glm::translate(model, translation);
+
+    model = glm::rotate(model, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    model = glm::scale(model, scale);
+
+    isDirty = false;
+
+    for (auto &dirtyChild : dirtyChildren) {
+        dirtyChild->updateSelfChildren(deltaTime);
+    }
+    dirtyChildren.clear();
 }
