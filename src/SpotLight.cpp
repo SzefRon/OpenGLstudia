@@ -26,4 +26,5 @@ void SpotLight::useLight(Shader &shader)
     shader.setFloat(("spotLights[" + indexStr + "].quadratic").c_str(), quadratic);
     shader.setFloat(("spotLights[" + indexStr + "].cutOff").c_str(), cutoff);
     shader.setFloat(("spotLights[" + indexStr + "].outerCutOff").c_str(), outerCutoff);
+    shader.setInt(("spotLights[" + indexStr + "].enabled").c_str(), enabled);
 }

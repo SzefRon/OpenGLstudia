@@ -271,12 +271,19 @@ int main(int, char**)
         directionalLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
         directionalLight->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
 
-        SpotLight *spotLight = new SpotLight(0, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 1.0f, 1.0f));
+        SpotLight *spotLight = new SpotLight(0, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.0f, 1.0f));
         mainNode->addChild(spotLight);
             vModel *spotLightModel = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
             spotLight->addChild(spotLightModel);
         spotLight->setTranslation(glm::vec3(20.0f, 10.0f, 10.0f));
         spotLight->setRotation(glm::vec3(0.0f, 0.0f, -2.0f));
+
+        SpotLight *spotLight2 = new SpotLight(1, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.5f, 0.5f));
+        mainNode->addChild(spotLight2);
+            vModel *spotLightModel2 = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
+            spotLight2->addChild(spotLightModel2);
+        spotLight2->setTranslation(glm::vec3(10.0f, 10.0f, 20.0f));
+        spotLight2->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
 
     mainNode->updateSelfChildren(deltaTime);
 
@@ -393,6 +400,39 @@ int main(int, char**)
 
             if (ImGui::CollapsingHeader("Swiatla")) {
                 ImGui::Indent(20.0f);
+                if (ImGui::CollapsingHeader("Directional")) {
+                    ImGui::Checkbox("Enabled", (bool *)(&directionalLight->enabled));
+                    float *color[3]{&directionalLight->color.x, &directionalLight->color.y, &directionalLight->color.z};
+                    ImGui::ColorEdit3("Color", *color);
+                    if (ImGui::SliderAngle("Angle X", &directionalLight->rotation.x)) {
+                        directionalLight->makeDirty();
+                    }
+                    if (ImGui::SliderAngle("Angle Y", &directionalLight->rotation.y)) {
+                        directionalLight->makeDirty();
+                    }
+                    if (ImGui::SliderAngle("Angle Z", &directionalLight->rotation.z)) {
+                        directionalLight->makeDirty();
+                    }
+                }
+                if (ImGui::CollapsingHeader("Point")) {
+                    ImGui::Checkbox("Enabled", (bool *)(&pointLight->enabled));
+                    float *color[3]{&pointLight->color.x, &pointLight->color.y, &pointLight->color.z};
+                    ImGui::ColorEdit3("Color", *color);
+                    ImGui::SliderFloat("Constant", &pointLight->constant, 0.0f, 2.0f);
+                    ImGui::SliderFloat("Linear", &pointLight->linear, 0.0f, 0.2f);
+                    ImGui::SliderFloat("Quadratic", &pointLight->quadratic, 0.0f, 0.02f);
+                    ImGui::SliderFloat("Pos Y", &pointLight->translation.y, -100.0f, 100.0f);
+                }
+                if (ImGui::CollapsingHeader("Spot")) {
+                    ImGui::Checkbox("Enabled", (bool *)(&spotLight->enabled));
+                    float *color[3]{&spotLight->color.x, &spotLight->color.y, &spotLight->color.z};
+                    ImGui::ColorEdit3("Color", *color);
+                    ImGui::SliderFloat("Constant", &spotLight->constant, 0.0f, 2.0f);
+                    ImGui::SliderFloat("Linear", &spotLight->linear, 0.0f, 0.2f);
+                    ImGui::SliderFloat("Quadratic", &spotLight->quadratic, 0.0f, 0.02f);
+                    ImGui::SliderFloat("Cutoff", &spotLight->cutoff, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Outer Cutoff", &spotLight->outerCutoff, 0.0f, 1.0f);
+                }
                 ImGui::Indent(-20.0f);
             }
 
@@ -417,7 +457,7 @@ int main(int, char**)
         deltaTime = speed * (currFrame - lastFrame);
         lastFrame = currFrame;
 
-        pointLight->setTranslation(glm::vec3(noInstancesSqrd * 1.5f * glm::sin(lastFrame * 0.1f) + noInstancesSqrd * 1.5f, 10.0f, noInstancesSqrd * 1.5f * glm::cos(lastFrame * 0.1f) + noInstancesSqrd * 1.5f));
+        pointLight->setTranslation(glm::vec3(noInstancesSqrd * 1.5f * glm::sin(lastFrame * 0.1f) + noInstancesSqrd * 1.5f, pointLight->translation.y, noInstancesSqrd * 1.5f * glm::cos(lastFrame * 0.1f) + noInstancesSqrd * 1.5f));
 
         mainNode->updateSelfChildren(deltaTime);
 
@@ -444,6 +484,7 @@ int main(int, char**)
         pointLight->useLight(textureShader);
         directionalLight->useLight(textureShader);
         spotLight->useLight(textureShader);
+        spotLight2->useLight(textureShader);
 
         grassFloor->draw(textureShader);
 
@@ -455,6 +496,7 @@ int main(int, char**)
         pointLight->useLight(instanceShader);
         directionalLight->useLight(instanceShader);
         spotLight->useLight(instanceShader);
+        spotLight2->useLight(instanceShader);
 
         housesInstancer->drawInstances(instanceShader);
         roofsInstancer->drawInstances(instanceShader);
@@ -466,6 +508,7 @@ int main(int, char**)
         pointLightModel->draw(lightlessShader);
         directionalLightModel->draw(lightlessShader);
         spotLightModel->draw(lightlessShader);
+        spotLightModel2->draw(lightlessShader);
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

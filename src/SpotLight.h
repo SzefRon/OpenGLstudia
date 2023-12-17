@@ -6,7 +6,8 @@
 
 class SpotLight : public GraphNode
 {
-private:
+public:
+    int enabled = 1;
     int index;
     float cutoff;
     float outerCutoff;
@@ -14,7 +15,7 @@ private:
     float linear;
     float quadratic;
     glm::vec3 color;
-public:
+
     SpotLight(int index, float cutoff, float outerCutoff, float constant, float linear, float quadratic, glm::vec3 color);
     void useLight(Shader &shader);
 };

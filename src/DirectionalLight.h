@@ -7,9 +7,10 @@
 
 class DirectionalLight : public GraphNode
 {
-private:
-    glm::vec3 color;
 public:
+    int enabled = 1;
+    glm::vec3 color;
+
     DirectionalLight(glm::vec3 color);
     void useLight(Shader &shader);
 };

@@ -19,4 +19,5 @@ void DirectionalLight::useLight(Shader &shader)
 
     shader.setUniform3fv("dirLight.direction", direction3D);
     shader.setUniform3fv("dirLight.color", color);
+    shader.setInt("dirLight.enabled", enabled);
 }

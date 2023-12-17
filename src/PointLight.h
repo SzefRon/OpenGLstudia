@@ -8,13 +8,14 @@
 
 class PointLight : public GraphNode
 {
-private:
+public:
+    int enabled = 1;
     int index;
     float constant;
     float linear;
     float quadratic;
     glm::vec3 color;
-public:
+
     PointLight(int index, float constant, float linear, float quadratic, glm::vec3 color);
     void useLight(Shader &shader);
 };

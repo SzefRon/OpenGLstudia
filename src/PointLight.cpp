@@ -13,4 +13,5 @@ void PointLight::useLight(Shader &shader)
     shader.setFloat(("pointLights[" + indexStr + "].constant").c_str(), constant);
     shader.setFloat(("pointLights[" + indexStr + "].linear").c_str(), linear);
     shader.setFloat(("pointLights[" + indexStr + "].quadratic").c_str(), quadratic);
+    shader.setInt(("pointLights[" + indexStr + "].enabled").c_str(), enabled);
 }
