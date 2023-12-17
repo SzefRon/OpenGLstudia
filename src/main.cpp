@@ -314,41 +314,17 @@ int main(int, char**)
                     if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
                     if (indexDomy < 0) indexDomy = 0;
                 }
-                if (ImGui::CollapsingHeader("Domki Translation")) {
-                    glm::vec3 &translation = houseNodes.at(indexDomy)->translation;
-                    if (ImGui::InputFloat("Domki Pos X", &translation.x)) {
-                        houseNodes.at(indexDomy)->setTranslation(translation);
-                    }
-                    if (ImGui::InputFloat("Domki Pos Y", &translation.y)) {
-                        houseNodes.at(indexDomy)->setTranslation(translation);
-                    }
-                    if (ImGui::InputFloat("Domki Pos Z", &translation.z)) {
-                        houseNodes.at(indexDomy)->setTranslation(translation);
-                    }
+                float *translation[3]{&houseNodes.at(indexDachy)->translation.x, &houseNodes.at(indexDachy)->translation.y, &houseNodes.at(indexDachy)->translation.z};
+                if (ImGui::InputFloat3("Domki Translation", *translation)) {
+                    houseNodes.at(indexDachy)->makeDirty();
                 }
-                if (ImGui::CollapsingHeader("Domki Rotation")) {
-                    glm::vec3 &rotation = houseNodes.at(indexDomy)->rotation;
-                    if (ImGui::InputFloat("Domki Rot X", &rotation.x)) {
-                        houseNodes.at(indexDomy)->setRotation(rotation);
-                    }
-                    if (ImGui::InputFloat("Domki Rot Y", &rotation.y)) {
-                        houseNodes.at(indexDomy)->setRotation(rotation);
-                    }
-                    if (ImGui::InputFloat("Domki Rot Z", &rotation.z)) {
-                        houseNodes.at(indexDomy)->setRotation(rotation);
-                    }
+                float *rotation[3]{&houseNodes.at(indexDachy)->rotation.x, &houseNodes.at(indexDachy)->rotation.y, &houseNodes.at(indexDachy)->rotation.z};
+                if (ImGui::InputFloat3("Domki Rotation", *rotation)) {
+                    houseNodes.at(indexDachy)->makeDirty();
                 }
-                if (ImGui::CollapsingHeader("Domki Scale")) {
-                    glm::vec3 &scale = houseNodes.at(indexDomy)->scale;
-                    if (ImGui::InputFloat("Domki Scale X", &scale.x)) {
-                        houseNodes.at(indexDomy)->setScale(scale);
-                    }
-                    if (ImGui::InputFloat("Domki Scale Y", &scale.y)) {
-                        houseNodes.at(indexDomy)->setScale(scale);
-                    }
-                    if (ImGui::InputFloat("Domki Scale Z", &scale.z)) {
-                        houseNodes.at(indexDomy)->setScale(scale);
-                    }
+                float *scale[3]{&houseNodes.at(indexDachy)->scale.x, &houseNodes.at(indexDachy)->scale.y, &houseNodes.at(indexDachy)->scale.z};
+                if (ImGui::InputFloat3("Domki Scale", *scale)) {
+                    houseNodes.at(indexDachy)->makeDirty();
                 }
                 ImGui::Indent(-20.0f);
             }
@@ -359,41 +335,17 @@ int main(int, char**)
                     if (indexDachy > noInstances - 1) indexDachy = noInstances - 1;
                     if (indexDachy < 0) indexDachy = 0;
                 }
-                if (ImGui::CollapsingHeader("Dachy Translation")) {
-                    glm::vec3 &translation = roofNodes.at(indexDachy)->translation;
-                    if (ImGui::InputFloat("Dachy Pos X", &translation.x)) {
-                        roofNodes.at(indexDachy)->setTranslation(translation);
-                    }
-                    if (ImGui::InputFloat("Dachy Pos Y", &translation.y)) {
-                        roofNodes.at(indexDachy)->setTranslation(translation);
-                    }
-                    if (ImGui::InputFloat("Dachy Pos Z", &translation.z)) {
-                        roofNodes.at(indexDachy)->setTranslation(translation);
-                    }
+                float *translation[3]{&roofNodes.at(indexDachy)->translation.x, &roofNodes.at(indexDachy)->translation.y, &roofNodes.at(indexDachy)->translation.z};
+                if (ImGui::InputFloat3("Dachy Translation", *translation)) {
+                    roofNodes.at(indexDachy)->makeDirty();
                 }
-                if (ImGui::CollapsingHeader("Dachy Rotation")) {
-                    glm::vec3 &rotation = roofNodes.at(indexDachy)->rotation;
-                    if (ImGui::InputFloat("Dachy Rot X", &rotation.x)) {
-                        roofNodes.at(indexDachy)->setRotation(rotation);
-                    }
-                    if (ImGui::InputFloat("Dachy Rot Y", &rotation.y)) {
-                        roofNodes.at(indexDachy)->setRotation(rotation);
-                    }
-                    if (ImGui::InputFloat("Dachy Rot Z", &rotation.z)) {
-                        roofNodes.at(indexDachy)->setRotation(rotation);
-                    }
+                float *rotation[3]{&roofNodes.at(indexDachy)->rotation.x, &roofNodes.at(indexDachy)->rotation.y, &roofNodes.at(indexDachy)->rotation.z};
+                if (ImGui::InputFloat3("Dachy Rotation", *rotation)) {
+                    roofNodes.at(indexDachy)->makeDirty();
                 }
-                if (ImGui::CollapsingHeader("Dachy Scale")) {
-                    glm::vec3 &scale = roofNodes.at(indexDachy)->scale;
-                    if (ImGui::InputFloat("Dachy Scale X", &scale.x)) {
-                        roofNodes.at(indexDachy)->setScale(scale);
-                    }
-                    if (ImGui::InputFloat("Dachy Scale Y", &scale.y)) {
-                        roofNodes.at(indexDachy)->setScale(scale);
-                    }
-                    if (ImGui::InputFloat("Dachy Scale Z", &scale.z)) {
-                        roofNodes.at(indexDachy)->setScale(scale);
-                    }
+                float *scale[3]{&roofNodes.at(indexDachy)->scale.x, &roofNodes.at(indexDachy)->scale.y, &roofNodes.at(indexDachy)->scale.z};
+                if (ImGui::InputFloat3("Dachy Scale", *scale)) {
+                    roofNodes.at(indexDachy)->makeDirty();
                 }
                 ImGui::Indent(-20.0f);
             }
@@ -401,37 +353,63 @@ int main(int, char**)
             if (ImGui::CollapsingHeader("Swiatla")) {
                 ImGui::Indent(20.0f);
                 if (ImGui::CollapsingHeader("Directional")) {
-                    ImGui::Checkbox("Enabled", (bool *)(&directionalLight->enabled));
+                    ImGui::Checkbox("Directional Enabled", (bool *)(&directionalLight->enabled));
                     float *color[3]{&directionalLight->color.x, &directionalLight->color.y, &directionalLight->color.z};
-                    ImGui::ColorEdit3("Color", *color);
-                    if (ImGui::SliderAngle("Angle X", &directionalLight->rotation.x)) {
+                    ImGui::ColorEdit3("Directional Color", *color);
+                    if (ImGui::SliderAngle("Directional Angle X", &directionalLight->rotation.x)) {
                         directionalLight->makeDirty();
                     }
-                    if (ImGui::SliderAngle("Angle Y", &directionalLight->rotation.y)) {
+                    if (ImGui::SliderAngle("Directional Angle Y", &directionalLight->rotation.y)) {
                         directionalLight->makeDirty();
                     }
-                    if (ImGui::SliderAngle("Angle Z", &directionalLight->rotation.z)) {
+                    if (ImGui::SliderAngle("Directional Angle Z", &directionalLight->rotation.z)) {
                         directionalLight->makeDirty();
                     }
                 }
                 if (ImGui::CollapsingHeader("Point")) {
-                    ImGui::Checkbox("Enabled", (bool *)(&pointLight->enabled));
+                    ImGui::Checkbox("Point Enabled", (bool *)(&pointLight->enabled));
                     float *color[3]{&pointLight->color.x, &pointLight->color.y, &pointLight->color.z};
-                    ImGui::ColorEdit3("Color", *color);
-                    ImGui::SliderFloat("Constant", &pointLight->constant, 0.0f, 2.0f);
-                    ImGui::SliderFloat("Linear", &pointLight->linear, 0.0f, 0.2f);
-                    ImGui::SliderFloat("Quadratic", &pointLight->quadratic, 0.0f, 0.02f);
-                    ImGui::SliderFloat("Pos Y", &pointLight->translation.y, -100.0f, 100.0f);
+                    ImGui::ColorEdit3("Point Color", *color);
+                    ImGui::SliderFloat("Point Constant", &pointLight->constant, 0.0f, 2.0f);
+                    ImGui::SliderFloat("Point Linear", &pointLight->linear, 0.0f, 0.2f);
+                    ImGui::SliderFloat("Point Quadratic", &pointLight->quadratic, 0.0f, 0.02f);
+                    ImGui::SliderFloat("Point Pos Y", &pointLight->translation.y, -100.0f, 100.0f);
                 }
-                if (ImGui::CollapsingHeader("Spot")) {
-                    ImGui::Checkbox("Enabled", (bool *)(&spotLight->enabled));
+                if (ImGui::CollapsingHeader("Spot 1")) {
+                    ImGui::Checkbox("Spot 1 Enabled", (bool *)(&spotLight->enabled));
                     float *color[3]{&spotLight->color.x, &spotLight->color.y, &spotLight->color.z};
-                    ImGui::ColorEdit3("Color", *color);
-                    ImGui::SliderFloat("Constant", &spotLight->constant, 0.0f, 2.0f);
-                    ImGui::SliderFloat("Linear", &spotLight->linear, 0.0f, 0.2f);
-                    ImGui::SliderFloat("Quadratic", &spotLight->quadratic, 0.0f, 0.02f);
-                    ImGui::SliderFloat("Cutoff", &spotLight->cutoff, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Outer Cutoff", &spotLight->outerCutoff, 0.0f, 1.0f);
+                    ImGui::ColorEdit3("Spot 1 Color", *color);
+                    ImGui::SliderFloat("Spot 1 Constant", &spotLight->constant, 0.0f, 2.0f);
+                    ImGui::SliderFloat("Spot 1 Linear", &spotLight->linear, 0.0f, 0.2f);
+                    ImGui::SliderFloat("Spot 1 Quadratic", &spotLight->quadratic, 0.0f, 0.02f);
+                    ImGui::SliderFloat("Spot 1 Cutoff", &spotLight->cutoff, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Spot 1 Outer Cutoff", &spotLight->outerCutoff, 0.0f, 1.0f);
+                    float *translation[3]{&spotLight->translation.x, &spotLight->translation.y, &spotLight->translation.z};
+                    if (ImGui::InputFloat3("Spot 1 Position", *translation)) {
+                        spotLight->makeDirty();
+                    }
+                    float *rotation[3]{&spotLight->rotation.x, &spotLight->rotation.y, &spotLight->rotation.z};
+                    if (ImGui::InputFloat3("Spot 1 Rotation", *rotation)) {
+                        spotLight->makeDirty();
+                    }
+                }
+                if (ImGui::CollapsingHeader("Spot 2")) {
+                    ImGui::Checkbox("Spot 2 Enabled", (bool *)(&spotLight2->enabled));
+                    float *color[3]{&spotLight2->color.x, &spotLight2->color.y, &spotLight2->color.z};
+                    ImGui::ColorEdit3("Spot 2 Color", *color);
+                    ImGui::SliderFloat("Spot 2 Constant", &spotLight2->constant, 0.0f, 2.0f);
+                    ImGui::SliderFloat("Spot 2 Linear", &spotLight2->linear, 0.0f, 0.2f);
+                    ImGui::SliderFloat("Spot 2 Quadratic", &spotLight2->quadratic, 0.0f, 0.02f);
+                    ImGui::SliderFloat("Spot 2 Cutoff", &spotLight2->cutoff, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Spot 2 Outer Cutoff", &spotLight2->outerCutoff, 0.0f, 1.0f);
+                    float *translation[3]{&spotLight2->translation.x, &spotLight2->translation.y, &spotLight2->translation.z};
+                    if (ImGui::InputFloat3("Spot 2 Position", *translation)) {
+                        spotLight2->makeDirty();
+                    }
+                    float *rotation[3]{&spotLight2->rotation.x, &spotLight2->rotation.y, &spotLight2->rotation.z};
+                    if (ImGui::InputFloat3("Spot 2 Rotation", *rotation)) {
+                        spotLight2->makeDirty();
+                    }
                 }
                 ImGui::Indent(-20.0f);
             }
