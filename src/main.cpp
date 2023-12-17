@@ -214,7 +214,7 @@ int main(int, char**)
 
     // Scene preparation
 
-    const int noInstances = 2000000;
+    const int noInstances = 1000000;
     const int noInstancesSqrd = (int)std::ceilf(std::sqrtf((float)noInstances));
     int it = 0;
     glm::mat4 *houseMatrices = new glm::mat4[noInstances];
@@ -314,17 +314,17 @@ int main(int, char**)
                     if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
                     if (indexDomy < 0) indexDomy = 0;
                 }
-                float *translation[3]{&houseNodes.at(indexDachy)->translation.x, &houseNodes.at(indexDachy)->translation.y, &houseNodes.at(indexDachy)->translation.z};
+                float *translation[3]{&houseNodes.at(indexDomy)->translation.x, &houseNodes.at(indexDomy)->translation.y, &houseNodes.at(indexDomy)->translation.z};
                 if (ImGui::InputFloat3("Domki Translation", *translation)) {
-                    houseNodes.at(indexDachy)->makeDirty();
+                    houseNodes.at(indexDomy)->makeDirty();
                 }
-                float *rotation[3]{&houseNodes.at(indexDachy)->rotation.x, &houseNodes.at(indexDachy)->rotation.y, &houseNodes.at(indexDachy)->rotation.z};
+                float *rotation[3]{&houseNodes.at(indexDomy)->rotation.x, &houseNodes.at(indexDomy)->rotation.y, &houseNodes.at(indexDomy)->rotation.z};
                 if (ImGui::InputFloat3("Domki Rotation", *rotation)) {
-                    houseNodes.at(indexDachy)->makeDirty();
+                    houseNodes.at(indexDomy)->makeDirty();
                 }
-                float *scale[3]{&houseNodes.at(indexDachy)->scale.x, &houseNodes.at(indexDachy)->scale.y, &houseNodes.at(indexDachy)->scale.z};
+                float *scale[3]{&houseNodes.at(indexDomy)->scale.x, &houseNodes.at(indexDomy)->scale.y, &houseNodes.at(indexDomy)->scale.z};
                 if (ImGui::InputFloat3("Domki Scale", *scale)) {
-                    houseNodes.at(indexDachy)->makeDirty();
+                    houseNodes.at(indexDomy)->makeDirty();
                 }
                 ImGui::Indent(-20.0f);
             }
@@ -356,13 +356,8 @@ int main(int, char**)
                     ImGui::Checkbox("Directional Enabled", (bool *)(&directionalLight->enabled));
                     float *color[3]{&directionalLight->color.x, &directionalLight->color.y, &directionalLight->color.z};
                     ImGui::ColorEdit3("Directional Color", *color);
-                    if (ImGui::SliderAngle("Directional Angle X", &directionalLight->rotation.x)) {
-                        directionalLight->makeDirty();
-                    }
-                    if (ImGui::SliderAngle("Directional Angle Y", &directionalLight->rotation.y)) {
-                        directionalLight->makeDirty();
-                    }
-                    if (ImGui::SliderAngle("Directional Angle Z", &directionalLight->rotation.z)) {
+                    float *rotation[3]{&directionalLight->rotation.x, &directionalLight->rotation.y, &directionalLight->rotation.z};
+                    if (ImGui::InputFloat3("Directional Rotation", *rotation)) {
                         directionalLight->makeDirty();
                     }
                 }
