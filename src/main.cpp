@@ -214,7 +214,7 @@ int main(int, char**)
 
     // Scene preparation
 
-    const int noInstances = 40000;
+    const int noInstances = 2000000;
     const int noInstancesSqrd = (int)std::ceilf(std::sqrtf((float)noInstances));
     int it = 0;
     glm::mat4 *houseMatrices = new glm::mat4[noInstances];
