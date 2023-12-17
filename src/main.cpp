@@ -12,6 +12,9 @@
 #include "Instancer.h"
 #include "InstanceNode.h"
 #include "Camera.h"
+#include "PointLight.h"
+#include "DirectionalLight.h"
+#include "SpotLight.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <glm/glm.hpp>
@@ -160,7 +163,8 @@ int main(int, char**)
     spdlog::info("Successfully initialized OpenGL loader!");
 
     Shader textureShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\texture.frag");
-    Shader instanceShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\instances.frag");
+    Shader instanceShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\texture.frag");
+    Shader lightlessShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\lightless.frag");
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -247,12 +251,32 @@ int main(int, char**)
                     roofNode->translation = roofMatrices[i][3];
                     roofNodes.push_back(roofNode);
                     houseNode->addChild(roofNode);
-                    //roofNode->makeDirty();
             }
         vModel *grassFloor = new vModel("..\\res\\models\\grass-floor\\grass-floor.obj", 1.0f);
         mainNode->addChild(grassFloor); 
         grassFloor->setScale(glm::vec3(noInstancesSqrd * 1.5f + 4.0f));
         grassFloor->setTranslation(glm::vec3(noInstancesSqrd * 1.5f + 2.0f, -1.0f, noInstancesSqrd * 1.5f + 2.0f));
+        
+        PointLight *pointLight = new PointLight(0, 1.0f, 0.01f, 0.001f, glm::vec3(0.0f, 1.0f, 1.0f));
+        mainNode->addChild(pointLight);
+            vModel *pointLightModel = new vModel("..\\res\\models\\sun\\sun.obj", 1.0f);
+            pointLight->addChild(pointLightModel);
+            pointLightModel->setScale(glm::vec3(0.5f));
+        pointLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
+
+        DirectionalLight *directionalLight = new DirectionalLight(glm::vec3(1.0f, 1.0f, 0.5f));
+        mainNode->addChild(directionalLight);
+            vModel *directionalLightModel = new vModel("..\\res\\models\\arrow\\arrow.obj", 1.0f);
+            directionalLight->addChild(directionalLightModel);
+        directionalLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
+        directionalLight->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
+
+        SpotLight *spotLight = new SpotLight(0, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 1.0f, 1.0f));
+        mainNode->addChild(spotLight);
+            vModel *spotLightModel = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
+            spotLight->addChild(spotLightModel);
+        spotLight->setTranslation(glm::vec3(20.0f, 10.0f, 10.0f));
+        spotLight->setRotation(glm::vec3(0.0f, 0.0f, -2.0f));
 
     mainNode->updateSelfChildren(deltaTime);
 
@@ -367,6 +391,11 @@ int main(int, char**)
                 ImGui::Indent(-20.0f);
             }
 
+            if (ImGui::CollapsingHeader("Swiatla")) {
+                ImGui::Indent(20.0f);
+                ImGui::Indent(-20.0f);
+            }
+
             ImGui::Separator();
 
             if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
@@ -388,6 +417,8 @@ int main(int, char**)
         deltaTime = speed * (currFrame - lastFrame);
         lastFrame = currFrame;
 
+        pointLight->setTranslation(glm::vec3(noInstancesSqrd * 1.5f * glm::sin(lastFrame * 0.1f) + noInstancesSqrd * 1.5f, 10.0f, noInstancesSqrd * 1.5f * glm::cos(lastFrame * 0.1f) + noInstancesSqrd * 1.5f));
+
         mainNode->updateSelfChildren(deltaTime);
 
         if (!editMode)
@@ -398,7 +429,7 @@ int main(int, char**)
         glfwMakeContextCurrent(window);
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(0.5f, 0.5f, 0.0f, 1.0f);
+        glClearColor(0.0f, 0.05f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 view = camera.GetViewMatrix();
@@ -410,16 +441,31 @@ int main(int, char**)
         textureShader.setUniformMat4("view", view);
         textureShader.setUniformMat4("projection", projection);
 
+        pointLight->useLight(textureShader);
+        directionalLight->useLight(textureShader);
+        spotLight->useLight(textureShader);
+
         grassFloor->draw(textureShader);
 
         instanceShader.use();
         instanceShader.setUniformMat4("view", view);
         instanceShader.setUniformMat4("projection", projection);
-        instanceShader.setUniform3fv("viewPos", camera.Position); 
+        instanceShader.setUniform3fv("viewPos", camera.Position);
+
+        pointLight->useLight(instanceShader);
+        directionalLight->useLight(instanceShader);
+        spotLight->useLight(instanceShader);
 
         housesInstancer->drawInstances(instanceShader);
         roofsInstancer->drawInstances(instanceShader);
-        // glBindVertexArray(0); // no need to unbind it every time 
+
+        lightlessShader.use();
+        lightlessShader.setUniformMat4("view", view);
+        lightlessShader.setUniformMat4("projection", projection);
+
+        pointLightModel->draw(lightlessShader);
+        directionalLightModel->draw(lightlessShader);
+        spotLightModel->draw(lightlessShader);
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

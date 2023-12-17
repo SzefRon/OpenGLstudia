@@ -22,4 +22,5 @@ public:
     void setUniform3fv(const char * name, glm::vec3 &val);
     void setUniform4fv(const char *name, glm::vec4 &val);
     void setInt(const char *name, int &val);
+    void setFloat(const char *name, float &val);
 };
