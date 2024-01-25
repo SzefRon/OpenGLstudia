@@ -15,6 +15,7 @@
 #include "PointLight.h"
 #include "DirectionalLight.h"
 #include "SpotLight.h"
+#include "Cubemap.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <glm/glm.hpp>
@@ -165,6 +166,9 @@ int main(int, char**)
     Shader textureShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\texture.frag");
     Shader instanceShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\texture.frag");
     Shader lightlessShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\lightless.frag");
+    Shader skyboxShader("..\\res\\shaders\\skybox.vert", "..\\res\\shaders\\skybox.frag");
+    Shader reflectiveShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\reflective.frag");
+    Shader refractiveShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\refractive.frag");
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -214,7 +218,7 @@ int main(int, char**)
 
     // Scene preparation
 
-    const int noInstances = 1000000;
+    const int noInstances = 10000;
     const int noInstancesSqrd = (int)std::ceilf(std::sqrtf((float)noInstances));
     int it = 0;
     glm::mat4 *houseMatrices = new glm::mat4[noInstances];
@@ -286,6 +290,23 @@ int main(int, char**)
         spotLight2->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
 
     mainNode->updateSelfChildren(deltaTime);
+
+    std::vector<std::string> faces;
+    faces.push_back("..\\res\\textures\\skybox\\right.jpg");
+    faces.push_back("..\\res\\textures\\skybox\\left.jpg");
+    faces.push_back("..\\res\\textures\\skybox\\top.jpg");
+    faces.push_back("..\\res\\textures\\skybox\\bottom.jpg");
+    faces.push_back("..\\res\\textures\\skybox\\front.jpg");
+    faces.push_back("..\\res\\textures\\skybox\\back.jpg");
+    Cubemap *cubemap = new Cubemap(faces);
+
+    houseModel = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
+    mainNode->addChild(houseModel);
+    houseModel->setTranslation(glm::vec3(0.0f, 4.0f, 0.0f));
+
+    roofModel = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
+    mainNode->addChild(roofModel);
+    roofModel->setTranslation(glm::vec3(0.0f, 6.0f, 0.0f));
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -450,6 +471,40 @@ int main(int, char**)
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(45.0f), (float)(display_w) / display_h, 0.1f, 10000.0f);
 
+        // SkyBox
+
+        glDepthMask(GL_FALSE);
+
+        skyboxShader.use();
+        glm::mat4 viewPos = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+        skyboxShader.setUniformMat4("view", viewPos);
+        skyboxShader.setUniformMat4("projection", projection);
+
+        cubemap->draw();
+
+        glDepthMask(GL_TRUE);
+
+        // Reflectives
+
+        reflectiveShader.use();
+        reflectiveShader.setUniformMat4("view", view);
+        reflectiveShader.setUniformMat4("projection", projection);
+        reflectiveShader.setUniform3fv("viewPos", camera.Position);
+
+        houseModel->draw(reflectiveShader);
+
+        // Refractives
+
+        refractiveShader.use();
+        refractiveShader.setUniformMat4("view", view);
+        refractiveShader.setUniformMat4("projection", projection);
+        refractiveShader.setUniform3fv("viewPos", camera.Position);
+
+        roofModel->draw(refractiveShader);
+        directionalLightModel->draw(refractiveShader);
+
+        // Textured
+
         textureShader.use();
         textureShader.setUniformMat4("view", view);
         textureShader.setUniformMat4("projection", projection);
@@ -460,6 +515,8 @@ int main(int, char**)
         spotLight2->useLight(textureShader);
 
         grassFloor->draw(textureShader);
+
+        // Instanced
 
         instanceShader.use();
         instanceShader.setUniformMat4("view", view);
@@ -474,12 +531,14 @@ int main(int, char**)
         housesInstancer->drawInstances(instanceShader);
         roofsInstancer->drawInstances(instanceShader);
 
+        // Lightless
+
         lightlessShader.use();
         lightlessShader.setUniformMat4("view", view);
         lightlessShader.setUniformMat4("projection", projection);
 
         pointLightModel->draw(lightlessShader);
-        directionalLightModel->draw(lightlessShader);
+        // directionalLightModel->draw(lightlessShader);
         spotLightModel->draw(lightlessShader);
         spotLightModel2->draw(lightlessShader);
  

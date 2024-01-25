@@ -1,0 +1,21 @@
+#version 330 core
+out vec4 FragColor;
+
+in vec3 Normal;
+in vec3 FragPos;
+
+uniform vec3 viewPos;
+uniform samplerCube skybox;
+
+void main()
+{             
+    vec3 ratio = vec3(1.00 / 1.01, 1.00 / 1.02, 1.00 / 1.03);
+    vec3 I = normalize(FragPos - viewPos);
+    vec3 Rr = refract(I, normalize(Normal), ratio.x);
+    vec3 Rg = refract(I, normalize(Normal), ratio.y);
+    vec3 Rb = refract(I, normalize(Normal), ratio.z);
+    float FragR = texture(skybox, Rr).r;
+    float FragG = texture(skybox, Rg).g;
+    float FragB = texture(skybox, Rb).b;
+    FragColor = vec4(FragR, FragG, FragB, 1.0);
+} 
