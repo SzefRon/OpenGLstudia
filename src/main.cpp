@@ -218,76 +218,71 @@ int main(int, char**)
 
     // Scene preparation
 
-    const int noInstances = 10000;
-    const int noInstancesSqrd = (int)std::ceilf(std::sqrtf((float)noInstances));
-    int it = 0;
+    const int noInstances = 1000;
+    float offsetX = 8.0f;
+    float offsetZ = 4.0f;
     glm::mat4 *houseMatrices = new glm::mat4[noInstances];
     glm::mat4 *roofMatrices = new glm::mat4[noInstances];
-    glm::mat4 *updatedRoofMatrices = new glm::mat4[noInstances];
-    for (int i = 0; i < noInstancesSqrd; i++) {
-        for (int j = 0; j < noInstancesSqrd; j++) {
-            if (it >= noInstances) break;
-            houseMatrices[it] = glm::mat4(1);
-            houseMatrices[it] = glm::translate(houseMatrices[it], glm::vec3(i * 3.0f, 0.0f, j * 3.0f));
-            roofMatrices[it] = glm::mat4(1);
-            roofMatrices[it] = glm::translate(roofMatrices[it], glm::vec3(0.0f, 2.0f, 0.0f));
-            updatedRoofMatrices[it] = roofMatrices[it] * houseMatrices[it];
-            it++;
-        }
-    }
+    glm::mat4 *floorMatrices = new glm::mat4[noInstances / 2];
 
     std::deque<InstanceNode *> houseNodes;
     std::deque<InstanceNode *> roofNodes;
 
     GraphNode *mainNode = new GraphNode();
-        GraphNode *housesNode = new GraphNode();
-        mainNode->addChild(housesNode);
-            vModel *houseModel = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
-            vModel *roofModel = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
-            Instancer *housesInstancer = new Instancer(houseModel, noInstances, houseMatrices);
-            Instancer *roofsInstancer = new Instancer(roofModel, noInstances, updatedRoofMatrices);
-            for (int i = 0; i < noInstances; i++) {
-                InstanceNode *houseNode = new InstanceNode(houseMatrices[i], i, housesInstancer);
-                houseNode->translation = houseMatrices[i][3];
-                houseNodes.push_back(houseNode);
-                housesNode->addChild(houseNode);
-                    InstanceNode *roofNode = new InstanceNode(roofMatrices[i], i, roofsInstancer);
-                    roofNode->translation = roofMatrices[i][3];
-                    roofNodes.push_back(roofNode);
-                    houseNode->addChild(roofNode);
-            }
-        vModel *grassFloor = new vModel("..\\res\\models\\grass-floor\\grass-floor.obj", 1.0f);
-        mainNode->addChild(grassFloor); 
-        grassFloor->setScale(glm::vec3(noInstancesSqrd * 1.5f + 4.0f));
-        grassFloor->setTranslation(glm::vec3(noInstancesSqrd * 1.5f + 2.0f, -1.0f, noInstancesSqrd * 1.5f + 2.0f));
+        vModel *houseModel = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
+        vModel *roofModel = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
+        vModel *floorModel = new vModel("..\\res\\models\\grass-floor\\grass-floor.obj", 1.0f);
         
-        PointLight *pointLight = new PointLight(0, 1.0f, 0.01f, 0.001f, glm::vec3(0.0f, 1.0f, 1.0f));
-        mainNode->addChild(pointLight);
-            vModel *pointLightModel = new vModel("..\\res\\models\\sun\\sun.obj", 1.0f);
-            pointLight->addChild(pointLightModel);
-            pointLightModel->setScale(glm::vec3(0.5f));
-        pointLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
+        Instancer *housesInstancer = new Instancer(houseModel, noInstances, houseMatrices);
+        Instancer *roofsInstancer = new Instancer(roofModel, noInstances, roofMatrices);
+        Instancer *floorsInstancer = new Instancer(floorModel, noInstances / 2, floorMatrices);
+        for (int i = 0; i < noInstances / 2; i++) {
+            GraphNode *neighboursNode = new GraphNode();
+            mainNode->addChild(neighboursNode);
+            neighboursNode->setTranslation(glm::vec3(i * offsetX, 0.0f, 0.0f));
+                InstanceNode *floorNode = new InstanceNode(floorMatrices[i], i, floorsInstancer);
+                neighboursNode->addChild(floorNode);
+                floorNode->setScale(glm::vec3(offsetX * 0.5f, 1.0f, offsetZ + 4.0f));
+                for (int j = 0; j < 2; j++) {
+                    int index = i * 2 + j;
+                    int sign = j == 0 ? 1 : -1;
+                    InstanceNode *houseNode = new InstanceNode(houseMatrices[index], index, housesInstancer);
+                    neighboursNode->addChild(houseNode);
+                    houseNode->setTranslation(glm::vec3(0.0f, 1.0f, sign * offsetZ));
+                        InstanceNode *roofNode = new InstanceNode(roofMatrices[index], index, roofsInstancer);
+                        houseNode->addChild(roofNode);
+                        roofNode->setTranslation(glm::vec3(0.0f, 2.0f, 0.0f));
+                }
+        }
+        // vModel *grassFloor = new vModel("..\\res\\models\\grass-floor\\grass-floor.obj", 1.0f);
+        
+        // PointLight *pointLight = new PointLight(0, 1.0f, 0.01f, 0.001f, glm::vec3(0.0f, 1.0f, 1.0f));
+        // mainNode->addChild(pointLight);
+        //     vModel *pointLightModel = new vModel("..\\res\\models\\sun\\sun.obj", 1.0f);
+        //     pointLight->addChild(pointLightModel);
+        //     pointLightModel->setScale(glm::vec3(0.5f));
+        // pointLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
 
         DirectionalLight *directionalLight = new DirectionalLight(glm::vec3(1.0f, 1.0f, 0.5f));
         mainNode->addChild(directionalLight);
             vModel *directionalLightModel = new vModel("..\\res\\models\\arrow\\arrow.obj", 1.0f);
             directionalLight->addChild(directionalLightModel);
         directionalLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
-        directionalLight->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
+        directionalLight->setRotation(glm::vec3(2.0f, 0.0f, -0.5f));
 
-        SpotLight *spotLight = new SpotLight(0, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.0f, 1.0f));
-        mainNode->addChild(spotLight);
-            vModel *spotLightModel = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
-            spotLight->addChild(spotLightModel);
-        spotLight->setTranslation(glm::vec3(20.0f, 10.0f, 10.0f));
-        spotLight->setRotation(glm::vec3(0.0f, 0.0f, -2.0f));
+        // SpotLight *spotLight = new SpotLight(0, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.0f, 1.0f));
+        // mainNode->addChild(spotLight);
+        //     vModel *spotLightModel = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
+        //     spotLight->addChild(spotLightModel);
+        // spotLight->setTranslation(glm::vec3(20.0f, 10.0f, 10.0f));
+        // spotLight->setRotation(glm::vec3(0.0f, 0.0f, -2.0f));
 
-        SpotLight *spotLight2 = new SpotLight(1, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.5f, 0.5f));
-        mainNode->addChild(spotLight2);
-            vModel *spotLightModel2 = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
-            spotLight2->addChild(spotLightModel2);
-        spotLight2->setTranslation(glm::vec3(10.0f, 10.0f, 20.0f));
-        spotLight2->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
+        // SpotLight *spotLight2 = new SpotLight(1, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.5f, 0.5f));
+        // mainNode->addChild(spotLight2);
+        //     vModel *spotLightModel2 = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
+        //     spotLight2->addChild(spotLightModel2);
+        // spotLight2->setTranslation(glm::vec3(10.0f, 10.0f, 20.0f));
+        // spotLight2->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
 
     mainNode->updateSelfChildren(deltaTime);
 
@@ -325,125 +320,125 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-        if (editMode) {
-            ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
-            ImGui::Begin("Hello darkness my old friend!");
+        // if (editMode) {
+        //     ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
+        //     ImGui::Begin("Hello darkness my old friend!");
 
-            if (ImGui::CollapsingHeader("Domki")) {
-                ImGui::Indent(20.0f);
-                if (ImGui::InputInt("Domki Index", &indexDomy)) {
-                    if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
-                    if (indexDomy < 0) indexDomy = 0;
-                }
-                float *translation[3]{&houseNodes.at(indexDomy)->translation.x, &houseNodes.at(indexDomy)->translation.y, &houseNodes.at(indexDomy)->translation.z};
-                if (ImGui::InputFloat3("Domki Translation", *translation)) {
-                    houseNodes.at(indexDomy)->makeDirty();
-                }
-                float *rotation[3]{&houseNodes.at(indexDomy)->rotation.x, &houseNodes.at(indexDomy)->rotation.y, &houseNodes.at(indexDomy)->rotation.z};
-                if (ImGui::InputFloat3("Domki Rotation", *rotation)) {
-                    houseNodes.at(indexDomy)->makeDirty();
-                }
-                float *scale[3]{&houseNodes.at(indexDomy)->scale.x, &houseNodes.at(indexDomy)->scale.y, &houseNodes.at(indexDomy)->scale.z};
-                if (ImGui::InputFloat3("Domki Scale", *scale)) {
-                    houseNodes.at(indexDomy)->makeDirty();
-                }
-                ImGui::Indent(-20.0f);
-            }
+        //     if (ImGui::CollapsingHeader("Domki")) {
+        //         ImGui::Indent(20.0f);
+        //         if (ImGui::InputInt("Domki Index", &indexDomy)) {
+        //             if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
+        //             if (indexDomy < 0) indexDomy = 0;
+        //         }
+        //         float *translation[3]{&houseNodes.at(indexDomy)->translation.x, &houseNodes.at(indexDomy)->translation.y, &houseNodes.at(indexDomy)->translation.z};
+        //         if (ImGui::InputFloat3("Domki Translation", *translation)) {
+        //             houseNodes.at(indexDomy)->makeDirty();
+        //         }
+        //         float *rotation[3]{&houseNodes.at(indexDomy)->rotation.x, &houseNodes.at(indexDomy)->rotation.y, &houseNodes.at(indexDomy)->rotation.z};
+        //         if (ImGui::InputFloat3("Domki Rotation", *rotation)) {
+        //             houseNodes.at(indexDomy)->makeDirty();
+        //         }
+        //         float *scale[3]{&houseNodes.at(indexDomy)->scale.x, &houseNodes.at(indexDomy)->scale.y, &houseNodes.at(indexDomy)->scale.z};
+        //         if (ImGui::InputFloat3("Domki Scale", *scale)) {
+        //             houseNodes.at(indexDomy)->makeDirty();
+        //         }
+        //         ImGui::Indent(-20.0f);
+        //     }
 
-            if (ImGui::CollapsingHeader("Dachy")) {
-                ImGui::Indent(20.0f);
-                if (ImGui::InputInt("Dachy Index", &indexDachy)) {
-                    if (indexDachy > noInstances - 1) indexDachy = noInstances - 1;
-                    if (indexDachy < 0) indexDachy = 0;
-                }
-                float *translation[3]{&roofNodes.at(indexDachy)->translation.x, &roofNodes.at(indexDachy)->translation.y, &roofNodes.at(indexDachy)->translation.z};
-                if (ImGui::InputFloat3("Dachy Translation", *translation)) {
-                    roofNodes.at(indexDachy)->makeDirty();
-                }
-                float *rotation[3]{&roofNodes.at(indexDachy)->rotation.x, &roofNodes.at(indexDachy)->rotation.y, &roofNodes.at(indexDachy)->rotation.z};
-                if (ImGui::InputFloat3("Dachy Rotation", *rotation)) {
-                    roofNodes.at(indexDachy)->makeDirty();
-                }
-                float *scale[3]{&roofNodes.at(indexDachy)->scale.x, &roofNodes.at(indexDachy)->scale.y, &roofNodes.at(indexDachy)->scale.z};
-                if (ImGui::InputFloat3("Dachy Scale", *scale)) {
-                    roofNodes.at(indexDachy)->makeDirty();
-                }
-                ImGui::Indent(-20.0f);
-            }
+        //     if (ImGui::CollapsingHeader("Dachy")) {
+        //         ImGui::Indent(20.0f);
+        //         if (ImGui::InputInt("Dachy Index", &indexDachy)) {
+        //             if (indexDachy > noInstances - 1) indexDachy = noInstances - 1;
+        //             if (indexDachy < 0) indexDachy = 0;
+        //         }
+        //         float *translation[3]{&roofNodes.at(indexDachy)->translation.x, &roofNodes.at(indexDachy)->translation.y, &roofNodes.at(indexDachy)->translation.z};
+        //         if (ImGui::InputFloat3("Dachy Translation", *translation)) {
+        //             roofNodes.at(indexDachy)->makeDirty();
+        //         }
+        //         float *rotation[3]{&roofNodes.at(indexDachy)->rotation.x, &roofNodes.at(indexDachy)->rotation.y, &roofNodes.at(indexDachy)->rotation.z};
+        //         if (ImGui::InputFloat3("Dachy Rotation", *rotation)) {
+        //             roofNodes.at(indexDachy)->makeDirty();
+        //         }
+        //         float *scale[3]{&roofNodes.at(indexDachy)->scale.x, &roofNodes.at(indexDachy)->scale.y, &roofNodes.at(indexDachy)->scale.z};
+        //         if (ImGui::InputFloat3("Dachy Scale", *scale)) {
+        //             roofNodes.at(indexDachy)->makeDirty();
+        //         }
+        //         ImGui::Indent(-20.0f);
+        //     }
 
-            if (ImGui::CollapsingHeader("Swiatla")) {
-                ImGui::Indent(20.0f);
-                if (ImGui::CollapsingHeader("Directional")) {
-                    ImGui::Checkbox("Directional Enabled", (bool *)(&directionalLight->enabled));
-                    float *color[3]{&directionalLight->color.x, &directionalLight->color.y, &directionalLight->color.z};
-                    ImGui::ColorEdit3("Directional Color", *color);
-                    float *rotation[3]{&directionalLight->rotation.x, &directionalLight->rotation.y, &directionalLight->rotation.z};
-                    if (ImGui::InputFloat3("Directional Rotation", *rotation)) {
-                        directionalLight->makeDirty();
-                    }
-                }
-                if (ImGui::CollapsingHeader("Point")) {
-                    ImGui::Checkbox("Point Enabled", (bool *)(&pointLight->enabled));
-                    float *color[3]{&pointLight->color.x, &pointLight->color.y, &pointLight->color.z};
-                    ImGui::ColorEdit3("Point Color", *color);
-                    ImGui::SliderFloat("Point Constant", &pointLight->constant, 0.0f, 2.0f);
-                    ImGui::SliderFloat("Point Linear", &pointLight->linear, 0.0f, 0.2f);
-                    ImGui::SliderFloat("Point Quadratic", &pointLight->quadratic, 0.0f, 0.02f);
-                    ImGui::SliderFloat("Point Pos Y", &pointLight->translation.y, -100.0f, 100.0f);
-                }
-                if (ImGui::CollapsingHeader("Spot 1")) {
-                    ImGui::Checkbox("Spot 1 Enabled", (bool *)(&spotLight->enabled));
-                    float *color[3]{&spotLight->color.x, &spotLight->color.y, &spotLight->color.z};
-                    ImGui::ColorEdit3("Spot 1 Color", *color);
-                    ImGui::SliderFloat("Spot 1 Constant", &spotLight->constant, 0.0f, 2.0f);
-                    ImGui::SliderFloat("Spot 1 Linear", &spotLight->linear, 0.0f, 0.2f);
-                    ImGui::SliderFloat("Spot 1 Quadratic", &spotLight->quadratic, 0.0f, 0.02f);
-                    ImGui::SliderFloat("Spot 1 Cutoff", &spotLight->cutoff, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Spot 1 Outer Cutoff", &spotLight->outerCutoff, 0.0f, 1.0f);
-                    float *translation[3]{&spotLight->translation.x, &spotLight->translation.y, &spotLight->translation.z};
-                    if (ImGui::InputFloat3("Spot 1 Position", *translation)) {
-                        spotLight->makeDirty();
-                    }
-                    float *rotation[3]{&spotLight->rotation.x, &spotLight->rotation.y, &spotLight->rotation.z};
-                    if (ImGui::InputFloat3("Spot 1 Rotation", *rotation)) {
-                        spotLight->makeDirty();
-                    }
-                }
-                if (ImGui::CollapsingHeader("Spot 2")) {
-                    ImGui::Checkbox("Spot 2 Enabled", (bool *)(&spotLight2->enabled));
-                    float *color[3]{&spotLight2->color.x, &spotLight2->color.y, &spotLight2->color.z};
-                    ImGui::ColorEdit3("Spot 2 Color", *color);
-                    ImGui::SliderFloat("Spot 2 Constant", &spotLight2->constant, 0.0f, 2.0f);
-                    ImGui::SliderFloat("Spot 2 Linear", &spotLight2->linear, 0.0f, 0.2f);
-                    ImGui::SliderFloat("Spot 2 Quadratic", &spotLight2->quadratic, 0.0f, 0.02f);
-                    ImGui::SliderFloat("Spot 2 Cutoff", &spotLight2->cutoff, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Spot 2 Outer Cutoff", &spotLight2->outerCutoff, 0.0f, 1.0f);
-                    float *translation[3]{&spotLight2->translation.x, &spotLight2->translation.y, &spotLight2->translation.z};
-                    if (ImGui::InputFloat3("Spot 2 Position", *translation)) {
-                        spotLight2->makeDirty();
-                    }
-                    float *rotation[3]{&spotLight2->rotation.x, &spotLight2->rotation.y, &spotLight2->rotation.z};
-                    if (ImGui::InputFloat3("Spot 2 Rotation", *rotation)) {
-                        spotLight2->makeDirty();
-                    }
-                }
-                ImGui::Indent(-20.0f);
-            }
+        //     if (ImGui::CollapsingHeader("Swiatla")) {
+        //         ImGui::Indent(20.0f);
+        //         if (ImGui::CollapsingHeader("Directional")) {
+        //             ImGui::Checkbox("Directional Enabled", (bool *)(&directionalLight->enabled));
+        //             float *color[3]{&directionalLight->color.x, &directionalLight->color.y, &directionalLight->color.z};
+        //             ImGui::ColorEdit3("Directional Color", *color);
+        //             float *rotation[3]{&directionalLight->rotation.x, &directionalLight->rotation.y, &directionalLight->rotation.z};
+        //             if (ImGui::InputFloat3("Directional Rotation", *rotation)) {
+        //                 directionalLight->makeDirty();
+        //             }
+        //         }
+        //         if (ImGui::CollapsingHeader("Point")) {
+        //             ImGui::Checkbox("Point Enabled", (bool *)(&pointLight->enabled));
+        //             float *color[3]{&pointLight->color.x, &pointLight->color.y, &pointLight->color.z};
+        //             ImGui::ColorEdit3("Point Color", *color);
+        //             ImGui::SliderFloat("Point Constant", &pointLight->constant, 0.0f, 2.0f);
+        //             ImGui::SliderFloat("Point Linear", &pointLight->linear, 0.0f, 0.2f);
+        //             ImGui::SliderFloat("Point Quadratic", &pointLight->quadratic, 0.0f, 0.02f);
+        //             ImGui::SliderFloat("Point Pos Y", &pointLight->translation.y, -100.0f, 100.0f);
+        //         }
+        //         if (ImGui::CollapsingHeader("Spot 1")) {
+        //             ImGui::Checkbox("Spot 1 Enabled", (bool *)(&spotLight->enabled));
+        //             float *color[3]{&spotLight->color.x, &spotLight->color.y, &spotLight->color.z};
+        //             ImGui::ColorEdit3("Spot 1 Color", *color);
+        //             ImGui::SliderFloat("Spot 1 Constant", &spotLight->constant, 0.0f, 2.0f);
+        //             ImGui::SliderFloat("Spot 1 Linear", &spotLight->linear, 0.0f, 0.2f);
+        //             ImGui::SliderFloat("Spot 1 Quadratic", &spotLight->quadratic, 0.0f, 0.02f);
+        //             ImGui::SliderFloat("Spot 1 Cutoff", &spotLight->cutoff, 0.0f, 1.0f);
+        //             ImGui::SliderFloat("Spot 1 Outer Cutoff", &spotLight->outerCutoff, 0.0f, 1.0f);
+        //             float *translation[3]{&spotLight->translation.x, &spotLight->translation.y, &spotLight->translation.z};
+        //             if (ImGui::InputFloat3("Spot 1 Position", *translation)) {
+        //                 spotLight->makeDirty();
+        //             }
+        //             float *rotation[3]{&spotLight->rotation.x, &spotLight->rotation.y, &spotLight->rotation.z};
+        //             if (ImGui::InputFloat3("Spot 1 Rotation", *rotation)) {
+        //                 spotLight->makeDirty();
+        //             }
+        //         }
+        //         if (ImGui::CollapsingHeader("Spot 2")) {
+        //             ImGui::Checkbox("Spot 2 Enabled", (bool *)(&spotLight2->enabled));
+        //             float *color[3]{&spotLight2->color.x, &spotLight2->color.y, &spotLight2->color.z};
+        //             ImGui::ColorEdit3("Spot 2 Color", *color);
+        //             ImGui::SliderFloat("Spot 2 Constant", &spotLight2->constant, 0.0f, 2.0f);
+        //             ImGui::SliderFloat("Spot 2 Linear", &spotLight2->linear, 0.0f, 0.2f);
+        //             ImGui::SliderFloat("Spot 2 Quadratic", &spotLight2->quadratic, 0.0f, 0.02f);
+        //             ImGui::SliderFloat("Spot 2 Cutoff", &spotLight2->cutoff, 0.0f, 1.0f);
+        //             ImGui::SliderFloat("Spot 2 Outer Cutoff", &spotLight2->outerCutoff, 0.0f, 1.0f);
+        //             float *translation[3]{&spotLight2->translation.x, &spotLight2->translation.y, &spotLight2->translation.z};
+        //             if (ImGui::InputFloat3("Spot 2 Position", *translation)) {
+        //                 spotLight2->makeDirty();
+        //             }
+        //             float *rotation[3]{&spotLight2->rotation.x, &spotLight2->rotation.y, &spotLight2->rotation.z};
+        //             if (ImGui::InputFloat3("Spot 2 Rotation", *rotation)) {
+        //                 spotLight2->makeDirty();
+        //             }
+        //         }
+        //         ImGui::Indent(-20.0f);
+        //     }
 
-            ImGui::Separator();
+        //     ImGui::Separator();
 
-            if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
-                if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-            if (ImGui::Checkbox("VSync", &vsyncMode)) {
-                if (vsyncMode) glfwSwapInterval(1);
-                else glfwSwapInterval(0);
-            }
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        //     if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
+        //         if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //         else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //     }
+        //     if (ImGui::Checkbox("VSync", &vsyncMode)) {
+        //         if (vsyncMode) glfwSwapInterval(1);
+        //         else glfwSwapInterval(0);
+        //     }
+        //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-            ImGui::End();
-        }
+        //     ImGui::End();
+        // }
 
         // Rendering
 
@@ -451,7 +446,7 @@ int main(int, char**)
         deltaTime = speed * (currFrame - lastFrame);
         lastFrame = currFrame;
 
-        pointLight->setTranslation(glm::vec3(noInstancesSqrd * 1.5f * glm::sin(lastFrame * 0.1f) + noInstancesSqrd * 1.5f, pointLight->translation.y, noInstancesSqrd * 1.5f * glm::cos(lastFrame * 0.1f) + noInstancesSqrd * 1.5f));
+        // pointLight->setTranslation(glm::vec3(noInstancesSqrd * 1.5f * glm::sin(lastFrame * 0.1f) + noInstancesSqrd * 1.5f, pointLight->translation.y, noInstancesSqrd * 1.5f * glm::cos(lastFrame * 0.1f) + noInstancesSqrd * 1.5f));
 
         mainNode->updateSelfChildren(deltaTime);
 
@@ -509,12 +504,12 @@ int main(int, char**)
         textureShader.setUniformMat4("view", view);
         textureShader.setUniformMat4("projection", projection);
 
-        pointLight->useLight(textureShader);
-        directionalLight->useLight(textureShader);
-        spotLight->useLight(textureShader);
-        spotLight2->useLight(textureShader);
+        // pointLight->useLight(textureShader);
+        // directionalLight->useLight(textureShader);
+        // spotLight->useLight(textureShader);
+        // spotLight2->useLight(textureShader);
 
-        grassFloor->draw(textureShader);
+        // grassFloor->draw(textureShader);
 
         // Instanced
 
@@ -523,13 +518,14 @@ int main(int, char**)
         instanceShader.setUniformMat4("projection", projection);
         instanceShader.setUniform3fv("viewPos", camera.Position);
 
-        pointLight->useLight(instanceShader);
+        // pointLight->useLight(instanceShader);
         directionalLight->useLight(instanceShader);
-        spotLight->useLight(instanceShader);
-        spotLight2->useLight(instanceShader);
+        // spotLight->useLight(instanceShader);
+        // spotLight2->useLight(instanceShader);
 
         housesInstancer->drawInstances(instanceShader);
         roofsInstancer->drawInstances(instanceShader);
+        floorsInstancer->drawInstances(instanceShader);
 
         // Lightless
 
@@ -537,10 +533,10 @@ int main(int, char**)
         lightlessShader.setUniformMat4("view", view);
         lightlessShader.setUniformMat4("projection", projection);
 
-        pointLightModel->draw(lightlessShader);
+        // pointLightModel->draw(lightlessShader);
         // directionalLightModel->draw(lightlessShader);
-        spotLightModel->draw(lightlessShader);
-        spotLightModel2->draw(lightlessShader);
+        // spotLightModel->draw(lightlessShader);
+        // spotLightModel2->draw(lightlessShader);
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

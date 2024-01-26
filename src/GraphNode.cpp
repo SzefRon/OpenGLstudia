@@ -53,8 +53,8 @@ void GraphNode::updateParentNodes()
 
 void GraphNode::makeChildrenDirty()
 {
+    isDirty = true;
     for (auto &child : children) {
-        isDirty = true;
         dirtyChildren.push_back(child);
         child->makeChildrenDirty();
     }
