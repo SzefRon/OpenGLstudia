@@ -9,7 +9,7 @@ uniform samplerCube skybox;
 
 void main()
 {             
-    vec3 ratio = vec3(1.00 / 1.01, 1.00 / 1.02, 1.00 / 1.03);
+    vec3 ratio = vec3(1.00 / 1.05, 1.00 / 1.06, 1.00 / 1.07);
     vec3 I = normalize(FragPos - viewPos);
     vec3 Rr = refract(I, normalize(Normal), ratio.x);
     vec3 Rg = refract(I, normalize(Normal), ratio.y);
@@ -17,5 +17,5 @@ void main()
     float FragR = texture(skybox, Rr).r;
     float FragG = texture(skybox, Rg).g;
     float FragB = texture(skybox, Rb).b;
-    FragColor = vec4(FragR, FragG, FragB, 1.0);
+    FragColor = vec4(FragR, FragG, FragB, 0.9);
 } 

@@ -16,6 +16,7 @@
 #include "DirectionalLight.h"
 #include "SpotLight.h"
 #include "Cubemap.h"
+#include "DoorNode.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <glm/glm.hpp>
@@ -169,6 +170,7 @@ int main(int, char**)
     Shader skyboxShader("..\\res\\shaders\\skybox.vert", "..\\res\\shaders\\skybox.frag");
     Shader reflectiveShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\reflective.frag");
     Shader refractiveShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\refractive.frag");
+    Shader instanceReflectiveShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\reflective.frag");
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -218,7 +220,7 @@ int main(int, char**)
 
     // Scene preparation
 
-    const int noInstances = 1000;
+    const int noInstances = 100;
     float offsetX = 8.0f;
     float offsetZ = 4.0f;
     glm::mat4 *houseMatrices = new glm::mat4[noInstances];
@@ -303,6 +305,27 @@ int main(int, char**)
     mainNode->addChild(roofModel);
     roofModel->setTranslation(glm::vec3(0.0f, 6.0f, 0.0f));
 
+    vModel *tramModel = new vModel("..\\res\\models\\tram.obj", 1.0f);
+    mainNode->addChild(tramModel);
+    tramModel->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
+    tramModel->setRotation(glm::vec3(0.0f, 0.5f * 3.14159f, 0.0f));
+    tramModel->setScale(glm::vec3(10.0f));
+        glm::mat4 *tramDoorMatrices = new glm::mat4[3];
+        vModel *tramDoor = new vModel("..\\res\\models\\tramdoor.obj", 1.0f);
+        Instancer *tramDoorInstancer = new Instancer(tramDoor, 3, tramDoorMatrices);
+            DoorNode *tramDoorNode = new DoorNode(tramDoorMatrices[0], 0, tramDoorInstancer, -0.1f);
+            tramModel->addChild(tramDoorNode);
+            tramDoorNode->setTranslation(glm::vec3(-0.17f, 0.09f, -0.226f));
+            tramDoorNode->makeDirty();
+                DoorNode *tramDoorNode2 = new DoorNode(tramDoorMatrices[1], 1, tramDoorInstancer, -0.1f);
+                tramDoorNode->addChild(tramDoorNode2);
+                tramDoorNode2->makeDirty();
+                    DoorNode *tramDoorNode3 = new DoorNode(tramDoorMatrices[2], 2, tramDoorInstancer, -0.1f);
+                    tramDoorNode2->addChild(tramDoorNode3);
+                    tramDoorNode3->makeDirty();
+
+    mainNode->updateSelfChildren(0.0f);
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -320,125 +343,32 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-        // if (editMode) {
-        //     ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
-        //     ImGui::Begin("Hello darkness my old friend!");
+        if (editMode) {
+            ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
+            ImGui::Begin("Hello darkness my old friend!");
 
-        //     if (ImGui::CollapsingHeader("Domki")) {
-        //         ImGui::Indent(20.0f);
-        //         if (ImGui::InputInt("Domki Index", &indexDomy)) {
-        //             if (indexDomy > noInstances - 1) indexDomy = noInstances - 1;
-        //             if (indexDomy < 0) indexDomy = 0;
-        //         }
-        //         float *translation[3]{&houseNodes.at(indexDomy)->translation.x, &houseNodes.at(indexDomy)->translation.y, &houseNodes.at(indexDomy)->translation.z};
-        //         if (ImGui::InputFloat3("Domki Translation", *translation)) {
-        //             houseNodes.at(indexDomy)->makeDirty();
-        //         }
-        //         float *rotation[3]{&houseNodes.at(indexDomy)->rotation.x, &houseNodes.at(indexDomy)->rotation.y, &houseNodes.at(indexDomy)->rotation.z};
-        //         if (ImGui::InputFloat3("Domki Rotation", *rotation)) {
-        //             houseNodes.at(indexDomy)->makeDirty();
-        //         }
-        //         float *scale[3]{&houseNodes.at(indexDomy)->scale.x, &houseNodes.at(indexDomy)->scale.y, &houseNodes.at(indexDomy)->scale.z};
-        //         if (ImGui::InputFloat3("Domki Scale", *scale)) {
-        //             houseNodes.at(indexDomy)->makeDirty();
-        //         }
-        //         ImGui::Indent(-20.0f);
-        //     }
+            if (ImGui::CollapsingHeader("Trans")) {
+                ImGui::Indent(20.0f);
+                float *translation = &(tramDoorNode->rotateOffset);
+                if (ImGui::SliderFloat("Domki Translation", translation, -3.14f, 3.14f)) {
+                    tramDoorNode->makeDirty();
+                }
+            }
 
-        //     if (ImGui::CollapsingHeader("Dachy")) {
-        //         ImGui::Indent(20.0f);
-        //         if (ImGui::InputInt("Dachy Index", &indexDachy)) {
-        //             if (indexDachy > noInstances - 1) indexDachy = noInstances - 1;
-        //             if (indexDachy < 0) indexDachy = 0;
-        //         }
-        //         float *translation[3]{&roofNodes.at(indexDachy)->translation.x, &roofNodes.at(indexDachy)->translation.y, &roofNodes.at(indexDachy)->translation.z};
-        //         if (ImGui::InputFloat3("Dachy Translation", *translation)) {
-        //             roofNodes.at(indexDachy)->makeDirty();
-        //         }
-        //         float *rotation[3]{&roofNodes.at(indexDachy)->rotation.x, &roofNodes.at(indexDachy)->rotation.y, &roofNodes.at(indexDachy)->rotation.z};
-        //         if (ImGui::InputFloat3("Dachy Rotation", *rotation)) {
-        //             roofNodes.at(indexDachy)->makeDirty();
-        //         }
-        //         float *scale[3]{&roofNodes.at(indexDachy)->scale.x, &roofNodes.at(indexDachy)->scale.y, &roofNodes.at(indexDachy)->scale.z};
-        //         if (ImGui::InputFloat3("Dachy Scale", *scale)) {
-        //             roofNodes.at(indexDachy)->makeDirty();
-        //         }
-        //         ImGui::Indent(-20.0f);
-        //     }
+            ImGui::Separator();
 
-        //     if (ImGui::CollapsingHeader("Swiatla")) {
-        //         ImGui::Indent(20.0f);
-        //         if (ImGui::CollapsingHeader("Directional")) {
-        //             ImGui::Checkbox("Directional Enabled", (bool *)(&directionalLight->enabled));
-        //             float *color[3]{&directionalLight->color.x, &directionalLight->color.y, &directionalLight->color.z};
-        //             ImGui::ColorEdit3("Directional Color", *color);
-        //             float *rotation[3]{&directionalLight->rotation.x, &directionalLight->rotation.y, &directionalLight->rotation.z};
-        //             if (ImGui::InputFloat3("Directional Rotation", *rotation)) {
-        //                 directionalLight->makeDirty();
-        //             }
-        //         }
-        //         if (ImGui::CollapsingHeader("Point")) {
-        //             ImGui::Checkbox("Point Enabled", (bool *)(&pointLight->enabled));
-        //             float *color[3]{&pointLight->color.x, &pointLight->color.y, &pointLight->color.z};
-        //             ImGui::ColorEdit3("Point Color", *color);
-        //             ImGui::SliderFloat("Point Constant", &pointLight->constant, 0.0f, 2.0f);
-        //             ImGui::SliderFloat("Point Linear", &pointLight->linear, 0.0f, 0.2f);
-        //             ImGui::SliderFloat("Point Quadratic", &pointLight->quadratic, 0.0f, 0.02f);
-        //             ImGui::SliderFloat("Point Pos Y", &pointLight->translation.y, -100.0f, 100.0f);
-        //         }
-        //         if (ImGui::CollapsingHeader("Spot 1")) {
-        //             ImGui::Checkbox("Spot 1 Enabled", (bool *)(&spotLight->enabled));
-        //             float *color[3]{&spotLight->color.x, &spotLight->color.y, &spotLight->color.z};
-        //             ImGui::ColorEdit3("Spot 1 Color", *color);
-        //             ImGui::SliderFloat("Spot 1 Constant", &spotLight->constant, 0.0f, 2.0f);
-        //             ImGui::SliderFloat("Spot 1 Linear", &spotLight->linear, 0.0f, 0.2f);
-        //             ImGui::SliderFloat("Spot 1 Quadratic", &spotLight->quadratic, 0.0f, 0.02f);
-        //             ImGui::SliderFloat("Spot 1 Cutoff", &spotLight->cutoff, 0.0f, 1.0f);
-        //             ImGui::SliderFloat("Spot 1 Outer Cutoff", &spotLight->outerCutoff, 0.0f, 1.0f);
-        //             float *translation[3]{&spotLight->translation.x, &spotLight->translation.y, &spotLight->translation.z};
-        //             if (ImGui::InputFloat3("Spot 1 Position", *translation)) {
-        //                 spotLight->makeDirty();
-        //             }
-        //             float *rotation[3]{&spotLight->rotation.x, &spotLight->rotation.y, &spotLight->rotation.z};
-        //             if (ImGui::InputFloat3("Spot 1 Rotation", *rotation)) {
-        //                 spotLight->makeDirty();
-        //             }
-        //         }
-        //         if (ImGui::CollapsingHeader("Spot 2")) {
-        //             ImGui::Checkbox("Spot 2 Enabled", (bool *)(&spotLight2->enabled));
-        //             float *color[3]{&spotLight2->color.x, &spotLight2->color.y, &spotLight2->color.z};
-        //             ImGui::ColorEdit3("Spot 2 Color", *color);
-        //             ImGui::SliderFloat("Spot 2 Constant", &spotLight2->constant, 0.0f, 2.0f);
-        //             ImGui::SliderFloat("Spot 2 Linear", &spotLight2->linear, 0.0f, 0.2f);
-        //             ImGui::SliderFloat("Spot 2 Quadratic", &spotLight2->quadratic, 0.0f, 0.02f);
-        //             ImGui::SliderFloat("Spot 2 Cutoff", &spotLight2->cutoff, 0.0f, 1.0f);
-        //             ImGui::SliderFloat("Spot 2 Outer Cutoff", &spotLight2->outerCutoff, 0.0f, 1.0f);
-        //             float *translation[3]{&spotLight2->translation.x, &spotLight2->translation.y, &spotLight2->translation.z};
-        //             if (ImGui::InputFloat3("Spot 2 Position", *translation)) {
-        //                 spotLight2->makeDirty();
-        //             }
-        //             float *rotation[3]{&spotLight2->rotation.x, &spotLight2->rotation.y, &spotLight2->rotation.z};
-        //             if (ImGui::InputFloat3("Spot 2 Rotation", *rotation)) {
-        //                 spotLight2->makeDirty();
-        //             }
-        //         }
-        //         ImGui::Indent(-20.0f);
-        //     }
+            if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
+                if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+            if (ImGui::Checkbox("VSync", &vsyncMode)) {
+                if (vsyncMode) glfwSwapInterval(1);
+                else glfwSwapInterval(0);
+            }
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-        //     ImGui::Separator();
-
-        //     if (ImGui::Checkbox("Wireframe Mode", &polygonMode)) {
-        //         if (polygonMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        //         else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        //     }
-        //     if (ImGui::Checkbox("VSync", &vsyncMode)) {
-        //         if (vsyncMode) glfwSwapInterval(1);
-        //         else glfwSwapInterval(0);
-        //     }
-        //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-        //     ImGui::End();
-        // }
+            ImGui::End();
+        }
 
         // Rendering
 
@@ -479,25 +409,6 @@ int main(int, char**)
 
         glDepthMask(GL_TRUE);
 
-        // Reflectives
-
-        reflectiveShader.use();
-        reflectiveShader.setUniformMat4("view", view);
-        reflectiveShader.setUniformMat4("projection", projection);
-        reflectiveShader.setUniform3fv("viewPos", camera.Position);
-
-        houseModel->draw(reflectiveShader);
-
-        // Refractives
-
-        refractiveShader.use();
-        refractiveShader.setUniformMat4("view", view);
-        refractiveShader.setUniformMat4("projection", projection);
-        refractiveShader.setUniform3fv("viewPos", camera.Position);
-
-        roofModel->draw(refractiveShader);
-        directionalLightModel->draw(refractiveShader);
-
         // Textured
 
         textureShader.use();
@@ -523,7 +434,6 @@ int main(int, char**)
         // spotLight->useLight(instanceShader);
         // spotLight2->useLight(instanceShader);
 
-        housesInstancer->drawInstances(instanceShader);
         roofsInstancer->drawInstances(instanceShader);
         floorsInstancer->drawInstances(instanceShader);
 
@@ -540,6 +450,36 @@ int main(int, char**)
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
+
+        // Reflectives
+
+        reflectiveShader.use();
+        reflectiveShader.setUniformMat4("view", view);
+        reflectiveShader.setUniformMat4("projection", projection);
+        reflectiveShader.setUniform3fv("viewPos", camera.Position);
+
+        houseModel->draw(reflectiveShader);
+
+        // Refractives
+
+        refractiveShader.use();
+        refractiveShader.setUniformMat4("view", view);
+        refractiveShader.setUniformMat4("projection", projection);
+        refractiveShader.setUniform3fv("viewPos", camera.Position);
+
+        roofModel->draw(refractiveShader);
+        directionalLightModel->draw(refractiveShader);
+        tramModel->draw(refractiveShader);
+
+        // Instance refractives
+
+        instanceReflectiveShader.use();
+        instanceReflectiveShader.setUniformMat4("view", view);
+        instanceReflectiveShader.setUniformMat4("projection", projection);
+        instanceReflectiveShader.setUniform3fv("viewPos", camera.Position);
+
+        tramDoorInstancer->drawInstances(instanceReflectiveShader);
+        housesInstancer->drawInstances(instanceReflectiveShader);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

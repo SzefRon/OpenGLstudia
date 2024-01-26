@@ -8,7 +8,7 @@
 
 class InstanceNode : public GraphNode
 {
-private:
+protected:
     Instancer *instancer;
     unsigned int index;
 public:

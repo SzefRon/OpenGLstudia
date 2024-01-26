@@ -54,10 +54,12 @@ void Instancer::updateInstances()
 
 void Instancer::drawInstances(Shader &shader)
 {
-    int val = 0;
-    shader.setInt("texture_diffuse1", val);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, model->textures_loaded[0].id);
+    if (model->textures_loaded.size() > 0) {
+        int val = 0;
+        shader.setInt("texture_diffuse1", val);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, model->textures_loaded[0].id);
+    }
 
     std::vector<vMesh> meshes = model->meshes;
     for (auto mesh : meshes) {
