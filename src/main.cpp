@@ -52,7 +52,7 @@
 Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 float lastX, lastY, deltaTime;
 bool firstMouse = true;
-bool editMode = false;
+bool steeringMode = false, follow = true;
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -77,7 +77,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    if (!editMode)
+    if (!follow && !steeringMode)
         camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
@@ -85,13 +85,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     if (action == GLFW_PRESS) {
         if (key == GLFW_KEY_RIGHT_SHIFT) {
-            if (editMode)
+            if (steeringMode)
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             else {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 firstMouse = true;
             }
-            editMode ^= true;
+            steeringMode ^= true;
         }
         if (key == GLFW_KEY_ESCAPE)
             glfwSetWindowShouldClose(window, true);
@@ -171,6 +171,7 @@ int main(int, char**)
     Shader reflectiveShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\reflective.frag");
     Shader refractiveShader("..\\res\\shaders\\texture.vert", "..\\res\\shaders\\refractive.frag");
     Shader instanceReflectiveShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\reflective.frag");
+    Shader colorShader("..\\res\\shaders\\instances.vert", "..\\res\\shaders\\color.frag");
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -209,23 +210,28 @@ int main(int, char**)
 
     // Loop variables
 
-    float speed = 1.0f;
-    int indexDomy = 0, indexDachy = 0;
     bool polygonMode = false, vsyncMode = true;
     double lastFrame = 0.0, currFrame = 0.0f;
-    vModel *model;
+    float doorRotation = 0.0f;
+    float acceleration = 0.0f, velocity = 0.0f;
+    bool brake = false, snap = true;
+    const int cameraCount = 2;
+    bool *cameraMode = new bool[cameraCount];
+    for (int i = 0; i < cameraCount; i++) cameraMode[i] = false;
+    cameraMode[0] = true;
 
-    std::vector<GraphNode *> textureModels;
-    std::vector<Cone *> cones;
+    std::vector<DoorNode *> doors;
 
     // Scene preparation
 
-    const int noInstances = 100;
+    const int noInstances = 10000;
     float offsetX = 8.0f;
     float offsetZ = 4.0f;
     glm::mat4 *houseMatrices = new glm::mat4[noInstances];
     glm::mat4 *roofMatrices = new glm::mat4[noInstances];
     glm::mat4 *floorMatrices = new glm::mat4[noInstances / 2];
+    glm::mat4 *railMatrices = new glm::mat4[noInstances / 2];
+    glm::mat4 *poleMatrices = new glm::mat4[noInstances / 4];
 
     std::deque<InstanceNode *> houseNodes;
     std::deque<InstanceNode *> roofNodes;
@@ -234,10 +240,15 @@ int main(int, char**)
         vModel *houseModel = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
         vModel *roofModel = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
         vModel *floorModel = new vModel("..\\res\\models\\grass-floor\\grass-floor.obj", 1.0f);
+        vModel *railModel = new vModel("..\\res\\models\\tramrail.obj", 1.0f);
+        vModel *poleModel = new vModel("..\\res\\models\\trampole.obj", 1.0f);
         
         Instancer *housesInstancer = new Instancer(houseModel, noInstances, houseMatrices);
         Instancer *roofsInstancer = new Instancer(roofModel, noInstances, roofMatrices);
         Instancer *floorsInstancer = new Instancer(floorModel, noInstances / 2, floorMatrices);
+        Instancer *railsInstancer = new Instancer(railModel, noInstances / 2, railMatrices);
+        Instancer *polesInstancer = new Instancer(poleModel, noInstances / 4, poleMatrices);
+
         for (int i = 0; i < noInstances / 2; i++) {
             GraphNode *neighboursNode = new GraphNode();
             mainNode->addChild(neighboursNode);
@@ -255,15 +266,20 @@ int main(int, char**)
                         houseNode->addChild(roofNode);
                         roofNode->setTranslation(glm::vec3(0.0f, 2.0f, 0.0f));
                 }
+                InstanceNode *railNode = new InstanceNode(railMatrices[i], i, railsInstancer);
+                neighboursNode->addChild(railNode);
+                railNode->setRotation(glm::vec3(0.0f, 3.14159f * 0.5f, 0.0f));
+                railNode->setScale(glm::vec3(0.6f, 1.0f, offsetX * 0.5f));
         }
-        // vModel *grassFloor = new vModel("..\\res\\models\\grass-floor\\grass-floor.obj", 1.0f);
-        
-        // PointLight *pointLight = new PointLight(0, 1.0f, 0.01f, 0.001f, glm::vec3(0.0f, 1.0f, 1.0f));
-        // mainNode->addChild(pointLight);
-        //     vModel *pointLightModel = new vModel("..\\res\\models\\sun\\sun.obj", 1.0f);
-        //     pointLight->addChild(pointLightModel);
-        //     pointLightModel->setScale(glm::vec3(0.5f));
-        // pointLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
+        InstanceNode *firstPoleNode;
+        for (int i = 0; i < noInstances / 4; i++) {
+            InstanceNode *poleNode = new InstanceNode(poleMatrices[i], i, polesInstancer);
+            if (i == 0) firstPoleNode = poleNode;
+            mainNode->addChild(poleNode);
+            poleNode->setTranslation(glm::vec3(i * offsetX * 2.0f - 3.5f, 0.0f, 0.0f));
+            poleNode->setRotation(glm::vec3(0.0f, -3.14159f * 0.5f, 0.0f));
+            poleNode->setScale(glm::vec3(2.0f, 1.69f, 9.2f));
+        }
 
         DirectionalLight *directionalLight = new DirectionalLight(glm::vec3(1.0f, 1.0f, 0.5f));
         mainNode->addChild(directionalLight);
@@ -272,19 +288,56 @@ int main(int, char**)
         directionalLight->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
         directionalLight->setRotation(glm::vec3(2.0f, 0.0f, -0.5f));
 
-        // SpotLight *spotLight = new SpotLight(0, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.0f, 1.0f));
-        // mainNode->addChild(spotLight);
-        //     vModel *spotLightModel = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
-        //     spotLight->addChild(spotLightModel);
-        // spotLight->setTranslation(glm::vec3(20.0f, 10.0f, 10.0f));
-        // spotLight->setRotation(glm::vec3(0.0f, 0.0f, -2.0f));
+        GraphNode *tramNode = new GraphNode();
+        mainNode->addChild(tramNode);
+            GraphNode *cameraNode1 = new GraphNode();
+            tramNode->addChild(cameraNode1);
+            cameraNode1->setTranslation(glm::vec3(4.0f, 6.0f, 6.0f));
 
-        // SpotLight *spotLight2 = new SpotLight(1, 0.9f, 0.8f, 1.0f, 0.01f, 0.001f, glm::vec3(1.0f, 0.5f, 0.5f));
-        // mainNode->addChild(spotLight2);
-        //     vModel *spotLightModel2 = new vModel("..\\res\\models\\cone\\cone.obj", 1.0f);
-        //     spotLight2->addChild(spotLightModel2);
-        // spotLight2->setTranslation(glm::vec3(10.0f, 10.0f, 20.0f));
-        // spotLight2->setRotation(glm::vec3(2.0f, 0.0f, 0.0f));
+            vModel *tramModel = new vModel("..\\res\\models\\tram.obj", 1.0f);
+            tramNode->addChild(tramModel);
+            tramModel->setTranslation(glm::vec3(0.0f, 0.25f, 0.0f));
+            tramModel->setRotation(glm::vec3(0.0f, 0.5f * 3.14159f, 0.0f));
+            tramModel->setScale(glm::vec3(4.0f));
+                GraphNode *tramCenter = new GraphNode();
+                tramModel->addChild(tramCenter);
+                tramCenter->setTranslation(glm::vec3(0.0f, 0.3f, 0.0f));
+                    GraphNode *cameraNode2 = new GraphNode();
+                    tramCenter->addChild(cameraNode2);
+                    cameraNode2->setTranslation(glm::vec3(0.0f, 0.0f, 0.55f));
+
+                glm::mat4 *tramDoorMatrices = new glm::mat4[14];
+                vModel *tramDoor = new vModel("..\\res\\models\\tramdoor.obj", 1.0f);
+                Instancer *tramDoorInstancer = new Instancer(tramDoor, 14, tramDoorMatrices);
+                    doors.push_back(DoorNode::create(3, tramDoorMatrices, 0, tramDoorInstancer, -0.1f, false));
+                    tramModel->addChild(doors[0]);
+                    doors[0]->setTranslation(glm::vec3(-0.17f, 0.09f, -0.226f));
+
+                    doors.push_back(DoorNode::create(2, tramDoorMatrices, 3, tramDoorInstancer, -0.1f, true));
+                    tramModel->addChild(doors[1]);
+                    doors[1]->setTranslation(glm::vec3(-0.17f, 0.09f, 0.215f));
+                    doors[1]->setRotation(glm::vec3(0.0f, 3.14159f, 0.0f));
+                    doors[1]->setScale(glm::vec3(1.0f, 1.0f, 0.75f));
+
+                    doors.push_back(DoorNode::create(2, tramDoorMatrices, 5, tramDoorInstancer, -0.1f, false));
+                    tramModel->addChild(doors[2]);
+                    doors[2]->setTranslation(glm::vec3(-0.17f, 0.09f, 0.515f));
+                    doors[2]->setScale(glm::vec3(1.0f, 1.0f, 0.75f));
+
+                    doors.push_back(DoorNode::create(3, tramDoorMatrices, 7, tramDoorInstancer, -0.1f, true));
+                    tramModel->addChild(doors[3]);
+                    doors[3]->setTranslation(glm::vec3(0.17f, 0.09f, -0.226f));
+
+                    doors.push_back(DoorNode::create(2, tramDoorMatrices, 10, tramDoorInstancer, -0.1f, false));
+                    tramModel->addChild(doors[4]);
+                    doors[4]->setTranslation(glm::vec3(0.17f, 0.09f, 0.215f));
+                    doors[4]->setRotation(glm::vec3(0.0f, 3.14159f, 0.0f));
+                    doors[4]->setScale(glm::vec3(1.0f, 1.0f, 0.75f));
+
+                    doors.push_back(DoorNode::create(2, tramDoorMatrices, 12, tramDoorInstancer, -0.1f, true));
+                    tramModel->addChild(doors[5]);
+                    doors[5]->setTranslation(glm::vec3(0.17f, 0.09f, 0.515f));
+                    doors[5]->setScale(glm::vec3(1.0f, 1.0f, 0.75f));
 
     mainNode->updateSelfChildren(deltaTime);
 
@@ -297,38 +350,12 @@ int main(int, char**)
     faces.push_back("..\\res\\textures\\skybox\\back.jpg");
     Cubemap *cubemap = new Cubemap(faces);
 
-    houseModel = new vModel("..\\res\\models\\house\\house.obj", 1.0f);
-    mainNode->addChild(houseModel);
-    houseModel->setTranslation(glm::vec3(0.0f, 4.0f, 0.0f));
-
-    roofModel = new vModel("..\\res\\models\\roof\\roof.obj", 1.0f);
-    mainNode->addChild(roofModel);
-    roofModel->setTranslation(glm::vec3(0.0f, 6.0f, 0.0f));
-
-    vModel *tramModel = new vModel("..\\res\\models\\tram.obj", 1.0f);
-    mainNode->addChild(tramModel);
-    tramModel->setTranslation(glm::vec3(0.0f, 10.0f, 0.0f));
-    tramModel->setRotation(glm::vec3(0.0f, 0.5f * 3.14159f, 0.0f));
-    tramModel->setScale(glm::vec3(10.0f));
-        glm::mat4 *tramDoorMatrices = new glm::mat4[3];
-        vModel *tramDoor = new vModel("..\\res\\models\\tramdoor.obj", 1.0f);
-        Instancer *tramDoorInstancer = new Instancer(tramDoor, 3, tramDoorMatrices);
-            DoorNode *tramDoorNode = new DoorNode(tramDoorMatrices[0], 0, tramDoorInstancer, -0.1f);
-            tramModel->addChild(tramDoorNode);
-            tramDoorNode->setTranslation(glm::vec3(-0.17f, 0.09f, -0.226f));
-            tramDoorNode->makeDirty();
-                DoorNode *tramDoorNode2 = new DoorNode(tramDoorMatrices[1], 1, tramDoorInstancer, -0.1f);
-                tramDoorNode->addChild(tramDoorNode2);
-                tramDoorNode2->makeDirty();
-                    DoorNode *tramDoorNode3 = new DoorNode(tramDoorMatrices[2], 2, tramDoorInstancer, -0.1f);
-                    tramDoorNode2->addChild(tramDoorNode3);
-                    tramDoorNode3->makeDirty();
-
-    mainNode->updateSelfChildren(0.0f);
-
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
+        currFrame = glfwGetTime();
+        deltaTime = currFrame - lastFrame;
+        lastFrame = currFrame;
         //std::cout << deltaTime << ' ';
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -343,16 +370,46 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-        if (editMode) {
+        if (steeringMode) {
             ImGui::SetWindowSize(ImVec2(300.0f, 100.0f));
             ImGui::Begin("Hello darkness my old friend!");
 
-            if (ImGui::CollapsingHeader("Trans")) {
+            if (ImGui::CollapsingHeader("Tram steering")) {
                 ImGui::Indent(20.0f);
-                float *translation = &(tramDoorNode->rotateOffset);
-                if (ImGui::SliderFloat("Domki Translation", translation, -3.14f, 3.14f)) {
-                    tramDoorNode->makeDirty();
+                if (ImGui::SliderFloat("Doors control", &doorRotation, -1.4f, 0.0f)) {
+                    for (auto &door : doors) {
+                        door->rotateOffset = doorRotation;
+                        door->makeDirty();
+                    }
+                    mainNode->updateSelfChildren(deltaTime);
                 }
+                if (ImGui::SliderFloat("Acceleration", &acceleration, -1.0f, 1.0f)) {}
+                if (ImGui::Checkbox("Brake", &brake)) {}
+                ImGui::Indent(-20.0f);
+            }
+            
+            if (ImGui::CollapsingHeader("Camera")) {
+                ImGui::Indent(20.0f);
+                for (int i = 0; i < cameraCount; i++) {
+                    if (ImGui::Checkbox(("Camera " + std::to_string(i + 1)).c_str(), &cameraMode[i])) {
+                        if (!cameraMode[i]) cameraMode[i] = true;
+                    }
+                    if (cameraMode[i]) {
+                        for (int j = 0; j < cameraCount; j++) {
+                            if (j != i) {
+                                cameraMode[j] = false;
+                            }
+                        }
+                    }
+                    if (i < cameraCount - 1) {
+                        ImGui::SameLine();
+                    }
+                }
+                if (ImGui::Checkbox("Follow tram", &follow)) {}
+                if (ImGui::Checkbox("Snap to tram", &snap)) {}
+                float *cameraPos[3] = {&cameraNode1->translation.x, &cameraNode1->translation.y, &cameraNode1->translation.z};
+                if (ImGui::SliderFloat3("Camera 1 position", *cameraPos, -10.0f, 10.0f)) {}
+                ImGui::Indent(-20.0f);
             }
 
             ImGui::Separator();
@@ -372,16 +429,41 @@ int main(int, char**)
 
         // Rendering
 
-        currFrame = glfwGetTime();
-        deltaTime = speed * (currFrame - lastFrame);
-        lastFrame = currFrame;
-
         // pointLight->setTranslation(glm::vec3(noInstancesSqrd * 1.5f * glm::sin(lastFrame * 0.1f) + noInstancesSqrd * 1.5f, pointLight->translation.y, noInstancesSqrd * 1.5f * glm::cos(lastFrame * 0.1f) + noInstancesSqrd * 1.5f));
+
+        if (!snap && !steeringMode)
+            processInput(window);
+
+        if (brake) {
+            int sign = velocity >= 0.0f ? 1 : -1;
+            velocity -= sign * 5.0f * deltaTime;
+            if ((sign == 1 && velocity < 0.0f) || (sign == -1 && velocity > 0.0f)) {
+                velocity = 0.0f;
+            }
+        }
+        else {
+            velocity += acceleration * deltaTime;
+        }
+
+        tramNode->setTranslation(glm::vec3(
+            tramNode->translation.x + velocity * deltaTime,
+            tramNode->translation.y,
+            tramNode->translation.z
+        ));
 
         mainNode->updateSelfChildren(deltaTime);
 
-        if (!editMode)
-            processInput(window);
+        if (snap) {
+            if (cameraMode[0]) camera.Position = cameraNode1->model[3];
+            else if (cameraMode[1]) camera.Position = cameraNode2->model[3];
+        }
+        if (follow) {
+            glm::vec3 tramCenterPos = tramCenter->model[3];
+            glm::vec3 viewDir = glm::normalize(tramCenterPos - camera.Position);
+            camera.Yaw = glm::degrees(atan2(viewDir.z, viewDir.x));
+            camera.Pitch = glm::degrees(atan2(viewDir.y, sqrt(viewDir.x * viewDir.x + viewDir.z * viewDir.z)));
+        }
+        camera.updateCameraVectors();
 
         ImGui::Render();
         int display_w, display_h;
@@ -416,7 +498,7 @@ int main(int, char**)
         textureShader.setUniformMat4("projection", projection);
 
         // pointLight->useLight(textureShader);
-        // directionalLight->useLight(textureShader);
+        directionalLight->useLight(textureShader);
         // spotLight->useLight(textureShader);
         // spotLight2->useLight(textureShader);
 
@@ -434,8 +516,26 @@ int main(int, char**)
         // spotLight->useLight(instanceShader);
         // spotLight2->useLight(instanceShader);
 
+        housesInstancer->drawInstances(instanceShader);
         roofsInstancer->drawInstances(instanceShader);
         floorsInstancer->drawInstances(instanceShader);
+
+        // Colored instanced
+
+        colorShader.use();
+        colorShader.setUniformMat4("view", view);
+        colorShader.setUniformMat4("projection", projection);
+        colorShader.setUniform3fv("viewPos", camera.Position);
+
+        directionalLight->useLight(colorShader);
+
+        glm::vec4 color = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+        colorShader.setUniform4fv("color", color);
+        railsInstancer->drawInstances(colorShader);
+
+        color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        colorShader.setUniform4fv("color", color);
+        polesInstancer->drawInstances(colorShader);
 
         // Lightless
 
@@ -458,8 +558,6 @@ int main(int, char**)
         reflectiveShader.setUniformMat4("projection", projection);
         reflectiveShader.setUniform3fv("viewPos", camera.Position);
 
-        houseModel->draw(reflectiveShader);
-
         // Refractives
 
         refractiveShader.use();
@@ -467,8 +565,12 @@ int main(int, char**)
         refractiveShader.setUniformMat4("projection", projection);
         refractiveShader.setUniform3fv("viewPos", camera.Position);
 
-        roofModel->draw(refractiveShader);
+        color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+        refractiveShader.setUniform4fv("color", color);
         directionalLightModel->draw(refractiveShader);
+
+        color = glm::vec4(1.0f, 1.0f, 0.0f, 0.1f);
+        refractiveShader.setUniform4fv("color", color);
         tramModel->draw(refractiveShader);
 
         // Instance refractives
@@ -478,8 +580,9 @@ int main(int, char**)
         instanceReflectiveShader.setUniformMat4("projection", projection);
         instanceReflectiveShader.setUniform3fv("viewPos", camera.Position);
 
+        color = glm::vec4(1.0f, 1.0f, 0.0f, 0.1f);
+        instanceReflectiveShader.setUniform4fv("color", color);
         tramDoorInstancer->drawInstances(instanceReflectiveShader);
-        housesInstancer->drawInstances(instanceReflectiveShader);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

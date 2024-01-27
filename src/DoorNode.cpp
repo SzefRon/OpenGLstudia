@@ -1,7 +1,7 @@
 #include "DoorNode.h"
 
-DoorNode::DoorNode(glm::mat4 model, unsigned int index, Instancer *instancer, float offset)
-    : InstanceNode(model, index, instancer), offset(offset)
+DoorNode::DoorNode(glm::mat4 model, unsigned int index, Instancer *instancer, float offset, bool direction)
+    : InstanceNode(model, index, instancer), offset(offset), direction(direction)
 {}
 
 void DoorNode::updateSelfChildren(float deltaTime)
@@ -22,6 +22,7 @@ void DoorNode::updateSelfChildren(float deltaTime)
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, offset));
         model = glm::rotate(model, rotateOffset * 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
     } else {
+        rotateOffset = fabs(rotateOffset) * (direction ? 1.0f : -1.0f);
         model = glm::rotate(model, rotateOffset, glm::vec3(0.0f, 1.0f, 0.0f));
     }
 

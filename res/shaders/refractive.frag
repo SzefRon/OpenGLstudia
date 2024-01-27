@@ -6,6 +6,7 @@ in vec3 FragPos;
 
 uniform vec3 viewPos;
 uniform samplerCube skybox;
+uniform vec4 color;
 
 void main()
 {             
@@ -17,5 +18,5 @@ void main()
     float FragR = texture(skybox, Rr).r;
     float FragG = texture(skybox, Rg).g;
     float FragB = texture(skybox, Rb).b;
-    FragColor = vec4(FragR, FragG, FragB, 0.9);
+    FragColor = vec4(mix(vec3(FragR, FragG, FragB), color.rgb, color.a), 1.0);
 } 

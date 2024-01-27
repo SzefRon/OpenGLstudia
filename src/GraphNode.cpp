@@ -37,8 +37,10 @@ void GraphNode::updateSelfChildren(float deltaTime)
 
 void GraphNode::makeDirty()
 {
-    updateParentNodes();
-    makeChildrenDirty();
+    if (!isDirty) {
+        updateParentNodes();
+        makeChildrenDirty();
+    }
 }
 
 void GraphNode::updateParentNodes()
